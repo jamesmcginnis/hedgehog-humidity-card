@@ -2,6 +2,8 @@
 
 [![HACS Badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge&logo=homeassistantcommunitystore&logoColor=white)](https://github.com/jamesmcginnis/hedgehog-humidity-card)
 
+[![Add to Home Assistant](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=jamesmcginnis&repository=hedgehog-humidity-card&category=plugin)
+
 A compact, pill-shaped Lovelace card for Home Assistant that displays humidity readings across multiple sensors at a glance. Tap the pill to open a sensor overview popup, then tap any individual sensor to view a historical graph with selectable time ranges.
 
 ---
