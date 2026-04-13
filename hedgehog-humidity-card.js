@@ -394,11 +394,13 @@ class HedgehogHumidityCard extends HTMLElement {
       <button class="hedgehog-close-btn" style="background:rgba(255,255,255,0.1);border:none;border-radius:50%;width:30px;height:30px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.65);font-size:16px;line-height:1;padding:0;transition:background 0.15s;flex-shrink:0;">✕</button>`;
     headerRow.querySelector('.hedgehog-close-btn').addEventListener('click', closeGraph);
 
-    // Current reading
+    // Current reading — colour matches the sensor pill in the overview popup
+    const allVals    = this._entities().map(e => this._humidVal(e)).filter(v => v !== null);
+    const humidColor = this._humidColor(val, allVals, accent);
     const readingRow = document.createElement('div');
     readingRow.style.cssText = 'display:flex;align-items:baseline;gap:6px;margin-bottom:14px;';
     readingRow.innerHTML = `
-      <span style="font-size:52px;font-weight:700;letter-spacing:-2px;color:${accent};line-height:1;">${val !== null ? this._fmt(val) : '—'}</span>
+      <span style="font-size:52px;font-weight:700;letter-spacing:-2px;color:${humidColor};line-height:1;">${val !== null ? this._fmt(val) : '—'}</span>
       <span style="font-size:16px;color:rgba(255,255,255,0.4);font-weight:500;padding-bottom:6px;">${unit}</span>`;
 
     // Time-range segmented control
