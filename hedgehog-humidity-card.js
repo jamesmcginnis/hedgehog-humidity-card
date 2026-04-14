@@ -485,9 +485,170 @@ class HedgehogHumidityCard extends HTMLElement {
       const values     = valid.map(s => parseFloat(s.state));
       const timestamps = valid.map(s => s.last_changed || s.last_updated);
       container.innerHTML = this._buildHumidGraph(values, timestamps, accent);
+      const svg = container.querySelector('svg');
+      if (svg) this._attachHumidCrosshair(svg, values, timestamps, this._unit(entityId));
     } catch(e) {
       container.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:rgba(255,255,255,0.25);font-size:12px;">Could not load history</div>`;
     }
+  }
+
+  _attachHumidCrosshair(svg, values, times, unit) {
+    const W     = 380, H = 140;
+    const pad   = { top: 12, right: 10, bottom: 22, left: 34 };
+    const plotW = W - pad.left - pad.right;
+    const plotH = H - pad.top  - pad.bottom;
+
+    let crosshairGroup = null;
+    let isDragging     = false;
+
+    const fmtTime = ts => {
+      if (!ts) return '';
+      const d = new Date(ts);
+      return `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+    };
+
+    const clientXtoSvgX = clientX => {
+      const rect   = svg.getBoundingClientRect();
+      const scaleX = W / rect.width;
+      return (clientX - rect.left) * scaleX;
+    };
+
+    const showCrosshair = svgX => {
+      const cx       = Math.max(pad.left, Math.min(W - pad.right, svgX));
+      const xRatio   = (cx - pad.left) / plotW;
+      const exactIdx = xRatio * (values.length - 1);
+      const lIdx     = Math.floor(exactIdx);
+      const rIdx     = Math.min(lIdx + 1, values.length - 1);
+      const frac     = exactIdx - lIdx;
+      const val      = values[lIdx] + (values[rIdx] - values[lIdx]) * frac;
+      const dec      = parseInt(this._config.decimals ?? 1);
+      const label    = val.toFixed(isNaN(dec) ? 1 : dec) + (unit || '%');
+      const color    = this._graphColor(val);
+
+      const snapIdx = frac < 0.5 ? lIdx : rIdx;
+      const timeStr = times ? fmtTime(times[snapIdx]) : '';
+      const hasTime = timeStr.length > 0;
+
+      if (crosshairGroup) crosshairGroup.remove();
+      crosshairGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+
+      // Dotted vertical line
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', cx.toFixed(1));
+      line.setAttribute('y1', pad.top.toString());
+      line.setAttribute('x2', cx.toFixed(1));
+      line.setAttribute('y2', (pad.top + plotH).toString());
+      line.setAttribute('stroke', 'rgba(255,255,255,0.75)');
+      line.setAttribute('stroke-width', '1.5');
+      line.setAttribute('stroke-dasharray', '4 3');
+
+      // Pill dimensions
+      const lblW = hasTime ? 64 : 54;
+      const lblH = hasTime ? 44 : 26;
+      const lblX = Math.max(pad.left + lblW / 2, Math.min(W - pad.right - lblW / 2, cx));
+      const lblY = pad.top + 1;
+
+      const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      bgRect.setAttribute('x',            (lblX - lblW / 2).toFixed(1));
+      bgRect.setAttribute('y',            lblY.toFixed(1));
+      bgRect.setAttribute('width',        lblW.toString());
+      bgRect.setAttribute('height',       lblH.toString());
+      bgRect.setAttribute('rx',           '6');
+      bgRect.setAttribute('fill',         'rgba(0,0,0,0.80)');
+      bgRect.setAttribute('stroke',       color);
+      bgRect.setAttribute('stroke-width', '1.5');
+
+      const valText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      valText.setAttribute('x',           lblX.toFixed(1));
+      valText.setAttribute('y',           (lblY + (hasTime ? 16 : 18)).toFixed(1));
+      valText.setAttribute('fill',        color);
+      valText.setAttribute('font-size',   '17');
+      valText.setAttribute('font-weight', '700');
+      valText.setAttribute('text-anchor', 'middle');
+      valText.setAttribute('font-family', "-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',sans-serif");
+      valText.textContent = label;
+
+      crosshairGroup.appendChild(line);
+      crosshairGroup.appendChild(bgRect);
+      crosshairGroup.appendChild(valText);
+
+      if (hasTime) {
+        const timeText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        timeText.setAttribute('x',           lblX.toFixed(1));
+        timeText.setAttribute('y',           (lblY + 36).toFixed(1));
+        timeText.setAttribute('fill',        'rgba(255,255,255,0.65)');
+        timeText.setAttribute('font-size',   '12');
+        timeText.setAttribute('font-weight', '500');
+        timeText.setAttribute('text-anchor', 'middle');
+        timeText.setAttribute('font-family', "-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',sans-serif");
+        timeText.textContent = timeStr;
+        crosshairGroup.appendChild(timeText);
+      }
+
+      svg.appendChild(crosshairGroup);
+    };
+
+    const clearCrosshair = () => {
+      if (crosshairGroup) { crosshairGroup.remove(); crosshairGroup = null; }
+    };
+
+    svg.style.cursor = 'crosshair';
+
+    // ── Touch (iOS/Android) ──
+    svg.addEventListener('touchstart', e => {
+      e.stopPropagation();
+      e.preventDefault();
+      const svgX = clientXtoSvgX(e.touches[0].clientX);
+      if (svgX < pad.left || svgX > W - pad.right) return;
+      isDragging = true;
+      showCrosshair(svgX);
+    }, { passive: false });
+
+    svg.addEventListener('touchmove', e => {
+      if (!isDragging) return;
+      e.stopPropagation();
+      e.preventDefault();
+      const svgX = clientXtoSvgX(e.touches[0].clientX);
+      if (svgX >= pad.left && svgX <= W - pad.right) showCrosshair(svgX);
+    }, { passive: false });
+
+    svg.addEventListener('touchend', e => {
+      e.stopPropagation();
+      isDragging = false;
+    }, { passive: false });
+
+    svg.addEventListener('touchcancel', () => { isDragging = false; });
+
+    // ── Mouse (desktop) ──
+    svg.addEventListener('mousedown', e => {
+      e.stopPropagation();
+      const svgX = clientXtoSvgX(e.clientX);
+      if (svgX < pad.left || svgX > W - pad.right) return;
+      isDragging = true;
+      showCrosshair(svgX);
+    });
+
+    svg.addEventListener('mousemove', e => {
+      if (!isDragging) return;
+      const svgX = clientXtoSvgX(e.clientX);
+      if (svgX >= pad.left && svgX <= W - pad.right) showCrosshair(svgX);
+    });
+
+    svg.addEventListener('mouseup', e => {
+      e.stopPropagation();
+      if (!isDragging) return;
+      isDragging = false;
+      const svgX = clientXtoSvgX(e.clientX);
+      if (svgX < pad.left || svgX > W - pad.right) clearCrosshair();
+    });
+
+    svg.addEventListener('mouseleave', () => { isDragging = false; });
+
+    svg.addEventListener('click', e => {
+      e.stopPropagation();
+      const svgX = clientXtoSvgX(e.clientX);
+      if (svgX < pad.left || svgX > W - pad.right) clearCrosshair();
+    });
   }
 
   _buildHumidGraph(values, timestamps, accent) {
