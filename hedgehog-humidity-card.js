@@ -329,6 +329,28 @@ class HedgehogHumidityCard extends HTMLElement {
     }, 180);
   }
 
+  // ── Comfort level helper ──────────────────────────────────────────────────
+  _comfortMessage(val) {
+    if (val === null) return null;
+
+    // Use user-configured thresholds if set
+    const lo = this._lo(), hi = this._hi();
+    if (lo !== null && hi !== null) {
+      if (val < lo) return { emoji: '🏜️', text: 'Too dry — consider a humidifier',  color: '#FF9F0A' };
+      if (val > hi) return { emoji: '💦', text: 'Too humid — consider a dehumidifier', color: '#30D158' };
+      return              { emoji: '😊', text: 'Humidity is just right',              color: '#32ADE6' };
+    }
+
+    // Fallback: standard indoor comfort bands (% RH)
+    if (val < 20)       return { emoji: '🏜️', text: 'Very dry — skin and airways may suffer', color: '#FF6B35' };
+    if (val < 30)       return { emoji: '🌵', text: 'Quite dry — a humidifier may help',      color: '#FF9F0A' };
+    if (val < 40)       return { emoji: '😌', text: 'Slightly dry but comfortable',            color: '#FFD60A' };
+    if (val <= 60)      return { emoji: '😊', text: 'Ideal humidity — very comfortable',       color: '#32ADE6' };
+    if (val <= 70)      return { emoji: '🌫️', text: 'Getting humid — feeling a bit muggy',     color: '#30D158' };
+    if (val <= 80)      return { emoji: '💦', text: 'Quite humid — mould risk increases',      color: '#34C759' };
+    return              { emoji: '🌧️', text: 'Very humid — consider a dehumidifier',           color: '#5E5CE6' };
+  }
+
   _humidColor(val, allVals, accent) {
     if (val === null || !allVals.length) return accent;
     const min = Math.min(...allVals), max = Math.max(...allVals);
@@ -403,6 +425,16 @@ class HedgehogHumidityCard extends HTMLElement {
       <span style="font-size:52px;font-weight:700;letter-spacing:-2px;color:${humidColor};line-height:1;">${val !== null ? this._fmt(val) : '—'}</span>
       <span style="font-size:16px;color:rgba(255,255,255,0.4);font-weight:500;padding-bottom:6px;">${unit}</span>`;
 
+    // Comfort message banner
+    const comfort = this._comfortMessage(val);
+    const comfortBanner = document.createElement('div');
+    if (comfort) {
+      comfortBanner.style.cssText = `display:flex;align-items:center;gap:9px;background:${comfort.color}18;border:1px solid ${comfort.color}40;border-radius:12px;padding:9px 13px;margin-bottom:12px;`;
+      comfortBanner.innerHTML = `
+        <span style="font-size:20px;line-height:1;">${comfort.emoji}</span>
+        <span style="font-size:13px;font-weight:600;color:${comfort.color};font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;">${comfort.text}</span>`;
+    }
+
     // Time-range segmented control
     const segWrap = document.createElement('div');
     segWrap.style.cssText = 'display:flex;background:rgba(118,118,128,0.2);border-radius:10px;padding:3px;gap:2px;margin-bottom:12px;';
@@ -455,6 +487,7 @@ class HedgehogHumidityCard extends HTMLElement {
     popup.appendChild(style);
     popup.appendChild(headerRow);
     popup.appendChild(readingRow);
+    if (comfort) popup.appendChild(comfortBanner);
     popup.appendChild(segWrap);
     popup.appendChild(graphWrap);
     popup.appendChild(infoWrap);
