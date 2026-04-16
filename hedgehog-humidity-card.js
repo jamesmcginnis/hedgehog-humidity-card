@@ -132,7 +132,7 @@ class HedgehogHumidityCard extends HTMLElement {
     const cfg = this._config;
     this.shadowRoot.innerHTML = `
       <style>
-        :host { display: block; }
+        :host { display: block; font-family: inherit; }
         ha-card {
           height: 56px;
           border-radius: 28px;
