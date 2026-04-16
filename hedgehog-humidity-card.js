@@ -159,9 +159,9 @@ class HedgehogHumidityCard extends HTMLElement {
         }
         .icon-wrap svg { display: block; }
         .content { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-        .label { font-size: 13px; font-weight: 600; color: ${cfg.text_color || '#fff'}; opacity: 0.55; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif; }
-        .range { font-size: 14px; font-weight: 700; color: ${cfg.text_color || '#fff'}; white-space: nowrap; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif; letter-spacing: -0.3px; }
-        .no-entities { font-size: 12px; color: rgba(255,255,255,0.35); font-family: -apple-system, sans-serif; }
+        .label { font-size: 13px; color: ${cfg.text_color || '#fff'}; opacity: 0.55; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0; }
+        .range { font-size: 14px; color: ${cfg.text_color || '#fff'}; white-space: nowrap; letter-spacing: -0.3px; }
+        .no-entities { font-size: 12px; color: rgba(255,255,255,0.35); }
       </style>
       <ha-card id="mainCard">
         <div class="icon-wrap">
@@ -195,7 +195,7 @@ class HedgehogHumidityCard extends HTMLElement {
     const label = (cfg.title || '').trim();
 
     if (!vals.length) {
-      content.innerHTML = `<span style="font-size:13px;font-weight:600;color:${cfg.text_color||'#fff'};opacity:0.55;font-family:-apple-system,sans-serif;">${label}</span><span style="font-size:14px;font-weight:700;color:${cfg.text_color||'#fff'};font-family:-apple-system,sans-serif;">—</span>`;
+      content.innerHTML = `<span style="font-size:13px;color:${cfg.text_color||'#fff'};opacity:0.55;">${label}</span><span style="font-size:14px;color:${cfg.text_color||'#fff'};">—</span>`;
       return;
     }
 
@@ -237,7 +237,7 @@ class HedgehogHumidityCard extends HTMLElement {
         background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
         transition: transform 0.15s ease, background 0.15s ease;
         min-width: 0; flex: 1; gap: 5px;
-        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+        font-family: var(--primary-font-family, var(--paper-font-common-base_-_font-family, inherit));
       }
       .hedgehog-sensor-pill:active { transform: scale(0.95); background: rgba(255,255,255,0.12); }
       .hedgehog-sensor-pill:hover  { background: rgba(255,255,255,0.1); }
@@ -249,7 +249,7 @@ class HedgehogHumidityCard extends HTMLElement {
 
     const popup = document.createElement('div');
     popup.className = 'hedgehog-popup';
-    popup.style.cssText = `background:${popupBg};backdrop-filter:blur(40px) saturate(180%);-webkit-backdrop-filter:blur(40px) saturate(180%);border:1px solid rgba(255,255,255,0.13);border-radius:28px;box-shadow:0 28px 72px rgba(0,0,0,0.65);padding:20px;width:100%;max-width:420px;max-height:85vh;overflow-y:auto;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;color:${textCol};`;
+    popup.style.cssText = `background:${popupBg};backdrop-filter:blur(40px) saturate(180%);-webkit-backdrop-filter:blur(40px) saturate(180%);border:1px solid rgba(255,255,255,0.13);border-radius:28px;box-shadow:0 28px 72px rgba(0,0,0,0.65);padding:20px;width:100%;max-width:420px;max-height:85vh;overflow-y:auto;color:${textCol};`;
     popup.addEventListener('touchmove', e => e.stopPropagation(), { passive: true });
 
     // Header
@@ -405,7 +405,7 @@ class HedgehogHumidityCard extends HTMLElement {
 
     const popup = document.createElement('div');
     popup.className = 'hedgehog-graph-popup';
-    popup.style.cssText = `background:${popupBg};backdrop-filter:blur(40px) saturate(180%);-webkit-backdrop-filter:blur(40px) saturate(180%);border:1px solid rgba(255,255,255,0.13);border-radius:26px;box-shadow:0 28px 72px rgba(0,0,0,0.65);padding:20px;width:100%;max-width:400px;max-height:85vh;overflow-y:auto;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;color:${textCol};`;
+    popup.style.cssText = `background:${popupBg};backdrop-filter:blur(40px) saturate(180%);-webkit-backdrop-filter:blur(40px) saturate(180%);border:1px solid rgba(255,255,255,0.13);border-radius:26px;box-shadow:0 28px 72px rgba(0,0,0,0.65);padding:20px;width:100%;max-width:400px;max-height:85vh;overflow-y:auto;color:${textCol};`;
     popup.addEventListener('touchmove', e => e.stopPropagation(), { passive: true });
 
     // Header
@@ -432,7 +432,7 @@ class HedgehogHumidityCard extends HTMLElement {
       comfortBanner.style.cssText = `display:flex;align-items:center;gap:9px;background:${comfort.color}18;border:1px solid ${comfort.color}40;border-radius:12px;padding:9px 13px;margin-bottom:12px;`;
       comfortBanner.innerHTML = `
         <span style="font-size:20px;line-height:1;">${comfort.emoji}</span>
-        <span style="font-size:13px;font-weight:600;color:${comfort.color};font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;">${comfort.text}</span>`;
+        <span style="font-size:13px;font-weight:600;color:${comfort.color};">${comfort.text}</span>`;
     }
 
     // Time-range segmented control
@@ -598,7 +598,7 @@ class HedgehogHumidityCard extends HTMLElement {
       valText.setAttribute('font-size',   '17');
       valText.setAttribute('font-weight', '700');
       valText.setAttribute('text-anchor', 'middle');
-      valText.setAttribute('font-family', "-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',sans-serif");
+      valText.setAttribute('font-family', this._haFont());
       valText.textContent = label;
 
       crosshairGroup.appendChild(line);
@@ -613,7 +613,7 @@ class HedgehogHumidityCard extends HTMLElement {
         timeText.setAttribute('font-size',   '12');
         timeText.setAttribute('font-weight', '500');
         timeText.setAttribute('text-anchor', 'middle');
-        timeText.setAttribute('font-family', "-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',sans-serif");
+        timeText.setAttribute('font-family', this._haFont());
         timeText.textContent = timeStr;
         crosshairGroup.appendChild(timeText);
       }
@@ -684,6 +684,14 @@ class HedgehogHumidityCard extends HTMLElement {
     });
   }
 
+  // Returns the active HA font family for use in SVG text elements
+  _haFont() {
+    const style = getComputedStyle(document.documentElement);
+    return style.getPropertyValue('--primary-font-family').trim()
+      || style.getPropertyValue('--paper-font-common-base_-_font-family').trim()
+      || 'inherit';
+  }
+
   _buildHumidGraph(values, timestamps, accent) {
     const W = 380, H = 140;
     const pad = { top: 12, right: 10, bottom: 22, left: 34 };
@@ -716,11 +724,12 @@ class HedgehogHumidityCard extends HTMLElement {
 
     const steps = 4;
     const dec   = Math.min(parseInt(this._config.decimals ?? 1), 1);
+    const svgFont = this._haFont();
     let yLabels = '';
     for (let i = 0; i <= steps; i++) {
       const v = min + (range * i / steps);
       const y = pad.top + plotH - (i / steps) * plotH;
-      yLabels += `<text x="${pad.left - 4}" y="${(y + 3).toFixed(1)}" fill="rgba(255,255,255,0.25)" font-size="7.5" text-anchor="end" font-family="-apple-system,sans-serif">${v.toFixed(dec)}</text>`;
+      yLabels += `<text x="${pad.left - 4}" y="${(y + 3).toFixed(1)}" fill="rgba(255,255,255,0.25)" font-size="7.5" text-anchor="end" font-family="${svgFont}">${v.toFixed(dec)}</text>`;
       yLabels += `<line x1="${pad.left}" y1="${y.toFixed(1)}" x2="${W-pad.right}" y2="${y.toFixed(1)}" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>`;
     }
 
@@ -732,18 +741,18 @@ class HedgehogHumidityCard extends HTMLElement {
       const dec2   = parseInt(this._config.decimals ?? 1);
       thresholdLines = `
         <line x1="${pad.left}" y1="${loY.toFixed(1)}" x2="${W-pad.right}" y2="${loY.toFixed(1)}" stroke="${lowCol}" stroke-width="1" stroke-dasharray="4 3" opacity="0.5"/>
-        <text x="${pad.left - 3}" y="${(loY + 3).toFixed(1)}" fill="${lowCol}" font-size="7" text-anchor="end" opacity="0.75" font-family="-apple-system,sans-serif">${lo.toFixed(isNaN(dec2)?1:dec2)}</text>
+        <text x="${pad.left - 3}" y="${(loY + 3).toFixed(1)}" fill="${lowCol}" font-size="7" text-anchor="end" opacity="0.75" font-family="${svgFont}">${lo.toFixed(isNaN(dec2)?1:dec2)}</text>
         <line x1="${pad.left}" y1="${hiY.toFixed(1)}" x2="${W-pad.right}" y2="${hiY.toFixed(1)}" stroke="${hiCol}" stroke-width="1" stroke-dasharray="4 3" opacity="0.5"/>
-        <text x="${pad.left - 3}" y="${(hiY + 3).toFixed(1)}" fill="${hiCol}" font-size="7" text-anchor="end" opacity="0.75" font-family="-apple-system,sans-serif">${hi.toFixed(isNaN(dec2)?1:dec2)}</text>`;
+        <text x="${pad.left - 3}" y="${(hiY + 3).toFixed(1)}" fill="${hiCol}" font-size="7" text-anchor="end" opacity="0.75" font-family="${svgFont}">${hi.toFixed(isNaN(dec2)?1:dec2)}</text>`;
     }
 
     const fmt = ts => { try { const d = new Date(ts); return `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`; } catch { return ''; } };
     let xLabels = '';
     if (timestamps.length >= 2) {
       xLabels = `
-        <text x="${pad.left+2}" y="${H-7}" fill="rgba(255,255,255,0.3)" font-size="8" text-anchor="start" font-family="-apple-system,sans-serif">${fmt(timestamps[0])}</text>
-        <text x="${(W/2).toFixed(0)}" y="${H-7}" fill="rgba(255,255,255,0.2)" font-size="8" text-anchor="middle" font-family="-apple-system,sans-serif">${fmt(timestamps[Math.floor(timestamps.length/2)])}</text>
-        <text x="${W-pad.right-2}" y="${H-7}" fill="rgba(255,255,255,0.3)" font-size="8" text-anchor="end" font-family="-apple-system,sans-serif">${fmt(timestamps[timestamps.length-1])}</text>`;
+        <text x="${pad.left+2}" y="${H-7}" fill="rgba(255,255,255,0.3)" font-size="8" text-anchor="start" font-family="${svgFont}">${fmt(timestamps[0])}</text>
+        <text x="${(W/2).toFixed(0)}" y="${H-7}" fill="rgba(255,255,255,0.2)" font-size="8" text-anchor="middle" font-family="${svgFont}">${fmt(timestamps[Math.floor(timestamps.length/2)])}</text>
+        <text x="${W-pad.right-2}" y="${H-7}" fill="rgba(255,255,255,0.3)" font-size="8" text-anchor="end" font-family="${svgFont}">${fmt(timestamps[timestamps.length-1])}</text>`;
     }
 
     const dec2    = parseInt(this._config.decimals ?? 1);
@@ -758,8 +767,8 @@ class HedgehogHumidityCard extends HTMLElement {
       const minIdx = values.indexOf(rawMin);
       const maxIdx = values.indexOf(rawMax);
       minMaxMarks = `
-        <text x="${xs[minIdx].toFixed(1)}" y="${(ys[minIdx]+12).toFixed(1)}" fill="#FF9F0A" font-size="7" text-anchor="middle" font-family="-apple-system,sans-serif">${rawMin.toFixed(isNaN(dec2)?1:dec2)}</text>
-        <text x="${xs[maxIdx].toFixed(1)}" y="${(ys[maxIdx]-5).toFixed(1)}" fill="#30D158" font-size="7" text-anchor="middle" font-family="-apple-system,sans-serif">${rawMax.toFixed(isNaN(dec2)?1:dec2)}</text>`;
+        <text x="${xs[minIdx].toFixed(1)}" y="${(ys[minIdx]+12).toFixed(1)}" fill="#FF9F0A" font-size="7" text-anchor="middle" font-family="${svgFont}">${rawMin.toFixed(isNaN(dec2)?1:dec2)}</text>
+        <text x="${xs[maxIdx].toFixed(1)}" y="${(ys[maxIdx]-5).toFixed(1)}" fill="#30D158" font-size="7" text-anchor="middle" font-family="${svgFont}">${rawMax.toFixed(isNaN(dec2)?1:dec2)}</text>`;
     }
 
     return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="overflow:visible;display:block;">
@@ -775,7 +784,7 @@ class HedgehogHumidityCard extends HTMLElement {
       <path d="${fillPath}" fill="url(#hedgehogGrad)" clip-path="url(#hedgehogClip)"/>
       <g clip-path="url(#hedgehogClip)">${segments}</g>
       <circle cx="${lastX}" cy="${lastY}" r="4.5" fill="${dotColor}" stroke="rgba(0,0,0,0.5)" stroke-width="1.5"/>
-      <text x="${parseFloat(lastX)+8}" y="${(parseFloat(lastY)+4).toFixed(1)}" fill="${dotColor}" font-size="9" font-weight="700" font-family="-apple-system,sans-serif">${lastLbl}</text>
+      <text x="${parseFloat(lastX)+8}" y="${(parseFloat(lastY)+4).toFixed(1)}" fill="${dotColor}" font-size="9" font-weight="700" font-family="${svgFont}">${lastLbl}</text>
       ${minMaxMarks}
       ${xLabels}
     </svg>`;
@@ -901,7 +910,7 @@ class HedgehogHumidityCardEditor extends HTMLElement {
 
     this.shadowRoot.innerHTML = `
       <style>
-        :host { display: block; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+        :host { display: block; font-family: var(--primary-font-family, var(--paper-font-common-base_-_font-family, inherit)); }
         .section { margin-bottom: 16px; }
         .section-title { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--secondary-text-color); margin-bottom: 8px; padding: 0 2px; display:flex;align-items:center;gap:6px; }
         .card-block { background: var(--card-background-color); border-radius: 12px; overflow: hidden; border: 1px solid var(--divider-color, rgba(0,0,0,0.1)); }
