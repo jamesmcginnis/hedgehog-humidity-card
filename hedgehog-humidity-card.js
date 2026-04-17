@@ -1,26 +1,26 @@
 /**
- * 🦔 Hedgehog Humidity Card
- * Compact pill card showing humidity range across multiple sensors.
+ * 🐸 Toad Temperature Card
+ * Compact pill card showing temperature range across multiple sensors.
  * Click pill → sensor overview popup
  * Click sensor pill → time-range graph popup (1h/3h/6h/12h/24h)
- * GitHub: https://github.com/jamesmcginnis/hedgehog-humidity-card
+ * GitHub: https://github.com/jamesmcginnis/toad-temperature-card
  */
 
 // ─── Editor: Colour field definitions ────────────────────────────────────────
-const HEDGEHOG_COLOUR_FIELDS = [
-  { key: 'pill_bg',      label: 'Pill Background',  desc: 'Background colour of the main pill card.',                      default: '#1c1c1e' },
-  { key: 'text_color',   label: 'Text',              desc: 'Primary text colour for humidity values and labels.',           default: '#ffffff' },
-  { key: 'accent_color', label: 'Accent / In-range', desc: 'Graph line colour for readings within the normal range, and accent highlights.', default: '#32ADE6' },
-  { key: 'low_color',    label: 'Low humidity',      desc: 'Graph line colour for readings below the minimum threshold.',  default: '#FF9F0A' },
-  { key: 'high_color',   label: 'High humidity',     desc: 'Graph line colour for readings above the maximum threshold.',  default: '#30D158' },
-  { key: 'popup_bg',     label: 'Popup Background',  desc: 'Background colour of all popup dialogs.',                     default: '#1c1c1e' },
-  { key: 'icon_color',   label: 'Humidity Icon',     desc: 'Colour of the droplet icon on the pill card.',                default: '#32ADE6' },
+const TOAD_COLOUR_FIELDS = [
+  { key: 'pill_bg',      label: 'Pill Background',  desc: 'Background colour of the main pill card.',              default: '#1c1c1e' },
+  { key: 'text_color',   label: 'Text',              desc: 'Primary text colour for temperature values and labels.', default: '#ffffff' },
+  { key: 'accent_color', label: 'Accent / In-range', desc: 'Graph line colour for readings within the normal range, and accent highlights.', default: '#007AFF' },
+  { key: 'low_color',    label: 'Low temperature',   desc: 'Graph line colour for readings below the minimum threshold.',  default: '#5AC8FA' },
+  { key: 'high_color',   label: 'High temperature',  desc: 'Graph line colour for readings above the maximum threshold.', default: '#FF9500' },
+  { key: 'popup_bg',     label: 'Popup Background',  desc: 'Background colour of all popup dialogs.',               default: '#1c1c1e' },
+  { key: 'icon_color',    label: 'Temperature Icon',  desc: 'Colour of the thermometer icon on the pill card.',      default: '#FF9500' },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Main Card
 // ─────────────────────────────────────────────────────────────────────────────
-class HedgehogHumidityCard extends HTMLElement {
+class ToadTemperatureCard extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
@@ -30,24 +30,24 @@ class HedgehogHumidityCard extends HTMLElement {
   }
 
   static getConfigElement() {
-    return document.createElement('hedgehog-humidity-card-editor');
+    return document.createElement('toad-temperature-card-editor');
   }
 
   static getStubConfig() {
     return {
-      type:            'custom:hedgehog-humidity-card',
+      type:            'custom:toad-temperature-card',
       entities:        [],
       title:           '',
       decimals:        1,
-      accent_color:    '#32ADE6',
-      low_color:       '#FF9F0A',
-      high_color:      '#30D158',
+      accent_color:    '#007AFF',
+      low_color:       '#5AC8FA',
+      high_color:      '#FF9500',
       low_threshold:   null,
       high_threshold:  null,
       pill_bg:         '#1c1c1e',
       text_color:      '#ffffff',
       popup_bg:        '#1c1c1e',
-      icon_color:      '#32ADE6',
+      icon_color:      '#FF9500',
     };
   }
 
@@ -55,15 +55,15 @@ class HedgehogHumidityCard extends HTMLElement {
     this._config = {
       title:           '',
       decimals:        1,
-      accent_color:    '#32ADE6',
-      low_color:       '#FF9F0A',
-      high_color:      '#30D158',
+      accent_color:    '#007AFF',
+      low_color:       '#5AC8FA',
+      high_color:      '#FF9500',
       low_threshold:   null,
       high_threshold:  null,
       pill_bg:         '#1c1c1e',
       text_color:      '#ffffff',
       popup_bg:        '#1c1c1e',
-      icon_color:      '#32ADE6',
+      icon_color:      '#FF9500',
       ...config
     };
     if (this.shadowRoot.innerHTML) this._render();
@@ -84,7 +84,7 @@ class HedgehogHumidityCard extends HTMLElement {
     return (this._config.entities || []).filter(e => e && this._hass?.states[e]);
   }
 
-  _humidVal(entityId) {
+  _tempVal(entityId) {
     const s = this._hass?.states[entityId];
     if (!s) return null;
     const v = parseFloat(s.state);
@@ -98,10 +98,12 @@ class HedgehogHumidityCard extends HTMLElement {
   }
 
   _unit(entityId) {
-    return this._hass?.states[entityId]?.attributes?.unit_of_measurement || '%';
+    const u = this._hass?.states[entityId]?.attributes?.unit_of_measurement || '°';
+    return u.replace('°C', '°c').replace('°F', '°f');
   }
 
   _name(entityId) {
+    // Check user-configured friendly name first
     const fn = this._config.friendly_names?.[entityId];
     if (fn) return fn;
     const s = this._hass?.states[entityId];
@@ -111,18 +113,18 @@ class HedgehogHumidityCard extends HTMLElement {
 
   _hexToRgb(hex) {
     const r = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    return r ? `${parseInt(r[1],16)},${parseInt(r[2],16)},${parseInt(r[3],16)}` : '50,173,230';
+    return r ? `${parseInt(r[1],16)},${parseInt(r[2],16)},${parseInt(r[3],16)}` : '0,122,255';
   }
 
-  // ── Threshold helpers ─────────────────────────────────────────────────────
+  // ── Threshold helpers ────────────────────────────────────────────────────────
   _lo() { const v = parseFloat(this._config.low_threshold);  return isNaN(v) ? null : v; }
   _hi() { const v = parseFloat(this._config.high_threshold); return isNaN(v) ? null : v; }
 
   _graphColor(val) {
     const lo = this._lo(), hi = this._hi();
-    const accent = this._config.accent_color || '#32ADE6';
-    if (lo !== null && val < lo) return this._config.low_color  || '#FF9F0A';
-    if (hi !== null && val > hi) return this._config.high_color || '#30D158';
+    const accent = this._config.accent_color || '#007AFF';
+    if (lo !== null && val < lo) return this._config.low_color  || '#5AC8FA';
+    if (hi !== null && val > hi) return this._config.high_color || '#FF9500';
     return accent;
   }
 
@@ -153,7 +155,7 @@ class HedgehogHumidityCard extends HTMLElement {
         .icon-wrap {
           width: 32px; height: 32px;
           border-radius: 50%;
-          background: rgba(${this._hexToRgb(cfg.icon_color || '#32ADE6')}, 0.15);
+          background: rgba(${this._hexToRgb(cfg.icon_color || '#FF9500')}, 0.15);
           display: flex; align-items: center; justify-content: center;
           flex-shrink: 0;
         }
@@ -165,8 +167,8 @@ class HedgehogHumidityCard extends HTMLElement {
       </style>
       <ha-card id="mainCard">
         <div class="icon-wrap">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="${cfg.icon_color || '#32ADE6'}">
-            <path d="M12 2C9.5 7 6 10.5 6 14a6 6 0 0 0 12 0c0-3.5-3.5-7-6-12zm0 16a4 4 0 0 1-4-4c0-1.5 1-3.5 2.5-5.5C11.5 10 12.5 11.5 13 13c.5 1 .8 2 .8 3A3.8 3.8 0 0 1 12 18z"/>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="${cfg.icon_color || '#FF9500'}">
+            <path d="M15 13V5a3 3 0 0 0-6 0v8a5 5 0 1 0 6 0zm-3 7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
           </svg>
         </div>
         <div class="content" id="content">
@@ -190,8 +192,8 @@ class HedgehogHumidityCard extends HTMLElement {
       return;
     }
 
-    const vals  = entities.map(e => this._humidVal(e)).filter(v => v !== null);
-    const unit  = entities.length ? this._unit(entities[0]) : '%';
+    const vals  = entities.map(e => this._tempVal(e)).filter(v => v !== null);
+    const unit  = entities.length ? this._unit(entities[0]) : '°';
     const label = (cfg.title || '').trim();
 
     if (!vals.length) {
@@ -219,7 +221,7 @@ class HedgehogHumidityCard extends HTMLElement {
     if (!entities.length) return;
 
     const popupBg = cfg.popup_bg     || '#1c1c1e';
-    const accent  = cfg.accent_color || '#32ADE6';
+    const accent  = cfg.accent_color || '#007AFF';
     const textCol = cfg.text_color   || '#ffffff';
 
     const overlay = document.createElement('div');
@@ -227,11 +229,11 @@ class HedgehogHumidityCard extends HTMLElement {
 
     const style = document.createElement('style');
     style.textContent = `
-      @keyframes hedgehogFadeIn  { from{opacity:0} to{opacity:1} }
-      @keyframes hedgehogSlideUp { from{transform:translateY(24px) scale(0.97);opacity:0} to{transform:none;opacity:1} }
-      .hedgehog-popup  { animation: hedgehogSlideUp 0.28s cubic-bezier(0.34,1.28,0.64,1); }
-      #hedgehog-overlay { animation: hedgehogFadeIn 0.2s ease; }
-      .hedgehog-sensor-pill {
+      @keyframes toadFadeIn  { from{opacity:0} to{opacity:1} }
+      @keyframes toadSlideUp { from{transform:translateY(24px) scale(0.97);opacity:0} to{transform:none;opacity:1} }
+      .toad-popup  { animation: toadSlideUp 0.28s cubic-bezier(0.34,1.28,0.64,1); }
+      #toad-overlay { animation: toadFadeIn 0.2s ease; }
+      .toad-sensor-pill {
         display: flex; flex-direction: column; align-items: center; justify-content: center;
         padding: 14px 10px; border-radius: 20px; cursor: pointer;
         background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
@@ -239,16 +241,16 @@ class HedgehogHumidityCard extends HTMLElement {
         min-width: 0; flex: 1; gap: 5px;
         font-family: var(--primary-font-family, inherit);
       }
-      .hedgehog-sensor-pill:active { transform: scale(0.95); background: rgba(255,255,255,0.12); }
-      .hedgehog-sensor-pill:hover  { background: rgba(255,255,255,0.1); }
-      .hedgehog-pill-humid { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; line-height: 1; }
-      .hedgehog-pill-name  { font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.45); text-align: center; letter-spacing: 0.02em; line-height: 1.3; max-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-      .hedgehog-pill-icon  { font-size: 16px; line-height: 1; }
-      .hedgehog-close-btn:hover { background:rgba(255,255,255,0.22)!important; }
+      .toad-sensor-pill:active { transform: scale(0.95); background: rgba(255,255,255,0.12); }
+      .toad-sensor-pill:hover  { background: rgba(255,255,255,0.1); }
+      .toad-pill-temp { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; line-height: 1; }
+      .toad-pill-name { font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.45); text-align: center; letter-spacing: 0.02em; line-height: 1.3; max-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .toad-pill-icon { font-size: 16px; line-height: 1; }
+      .toad-close-btn:hover { background:rgba(255,255,255,0.22)!important; }
     `;
 
     const popup = document.createElement('div');
-    popup.className = 'hedgehog-popup';
+    popup.className = 'toad-popup';
     popup.style.cssText = `background:${popupBg};backdrop-filter:blur(40px) saturate(180%);-webkit-backdrop-filter:blur(40px) saturate(180%);border:1px solid rgba(255,255,255,0.13);border-radius:28px;box-shadow:0 28px 72px rgba(0,0,0,0.65);padding:20px;width:100%;max-width:420px;max-height:85vh;overflow-y:auto;color:${textCol};font-family:${this._haFont()};`;
     popup.addEventListener('touchmove', e => e.stopPropagation(), { passive: true });
 
@@ -258,25 +260,25 @@ class HedgehogHumidityCard extends HTMLElement {
     headerRow.innerHTML = `
       <div style="display:flex;align-items:center;gap:10px;">
         <div style="width:28px;height:28px;border-radius:50%;background:${accent}22;display:flex;align-items:center;justify-content:center;">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="${accent}"><path d="M12 2C9.5 7 6 10.5 6 14a6 6 0 0 0 12 0c0-3.5-3.5-7-6-12zm0 16a4 4 0 0 1-4-4c0-1.5 1-3.5 2.5-5.5C11.5 10 12.5 11.5 13 13c.5 1 .8 2 .8 3A3.8 3.8 0 0 1 12 18z"/></svg>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="${accent}"><path d="M15 13V5a3 3 0 0 0-6 0v8a5 5 0 1 0 6 0zm-3 7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/></svg>
         </div>
-        <span style="font-size:15px;font-weight:700;color:${textCol};">${cfg.title || 'Humidity'}</span>
+        <span style="font-size:15px;font-weight:700;color:${textCol};">${cfg.title || 'Temperature'}</span>
       </div>
-      <button class="hedgehog-close-btn" style="background:rgba(255,255,255,0.1);border:none;border-radius:50%;width:30px;height:30px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.65);font-size:16px;line-height:1;padding:0;transition:background 0.15s;flex-shrink:0;">✕</button>`;
-    headerRow.querySelector('.hedgehog-close-btn').addEventListener('click', () => this._closeOverviewPopup());
+      <button class="toad-close-btn" style="background:rgba(255,255,255,0.1);border:none;border-radius:50%;width:30px;height:30px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.65);font-size:16px;line-height:1;padding:0;transition:background 0.15s;flex-shrink:0;">✕</button>`;
+    headerRow.querySelector('.toad-close-btn').addEventListener('click', () => this._closeOverviewPopup());
 
     // Stats bar
-    const vals   = entities.map(e => this._humidVal(e)).filter(v => v !== null);
+    const vals   = entities.map(e => this._tempVal(e)).filter(v => v !== null);
     const unit   = this._unit(entities[0]);
     const minVal = vals.length ? Math.min(...vals) : null;
     const maxVal = vals.length ? Math.max(...vals) : null;
     const avgVal = vals.length ? vals.reduce((a,b) => a+b, 0) / vals.length : null;
 
-    // Stats bar — clicking sorts the sensor grid below
+    // Stats bar — clicking highlights the matching sensor pill(s) in place
     const statsRow = document.createElement('div');
     statsRow.style.cssText = 'display:flex;gap:8px;margin-bottom:18px;';
 
-    // Sensor pills label and grid declared here so rebuildPills/makeStatPill can reference them
+    // Sensor pills label and grid declared here so functions below can reference them
     const pillsLabel = document.createElement('div');
     pillsLabel.style.cssText = 'font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:10px;';
     pillsLabel.textContent = `${entities.length} Sensor${entities.length !== 1 ? 's' : ''}`;
@@ -284,37 +286,45 @@ class HedgehogHumidityCard extends HTMLElement {
     const pillsGrid = document.createElement('div');
     pillsGrid.style.cssText = 'display:grid;grid-template-columns:repeat(3,1fr);gap:10px;';
 
-    const allVals = entities.map(e => this._humidVal(e)).filter(v => v !== null);
+    const allVals = entities.map(e => this._tempVal(e)).filter(v => v !== null);
 
-    let activeSort = null; // 'low' | 'avg' | 'high' | null
+    let activeSort = null;
 
-    const sortedEntities = (mode) => {
-      const withVals = entities.map(e => ({ e, v: this._humidVal(e) })).filter(x => x.v !== null);
-      if (mode === 'low')  withVals.sort((a, b) => a.v - b.v);
-      if (mode === 'high') withVals.sort((a, b) => b.v - a.v);
-      if (mode === 'avg')  withVals.sort((a, b) => Math.abs(a.v - avgVal) - Math.abs(b.v - avgVal));
-      return withVals.map(x => x.e);
+    // Build the entity → pill map so we can highlight by entity id
+    const pillMap = new Map();
+    entities.forEach(entityId => {
+      const val   = this._tempVal(entityId);
+      const name  = this._name(entityId);
+      const unit2 = this._unit(entityId);
+      const pill  = document.createElement('div');
+      pill.className = 'toad-sensor-pill';
+      const tempColor = this._tempColor(val, allVals, accent);
+      pill.innerHTML = `
+        <div class="toad-pill-icon">🌡️</div>
+        <div class="toad-pill-temp" style="color:${tempColor}">${val !== null ? this._fmt(val)+unit2 : '—'}</div>
+        <div class="toad-pill-name">${name}</div>`;
+      pill.addEventListener('click', ev => { ev.stopPropagation(); this._openGraphPopup(entityId); });
+      pillsGrid.appendChild(pill);
+      pillMap.set(entityId, pill);
+    });
+
+    const highlightPills = (targetIds) => {
+      pillMap.forEach((pill, entityId) => {
+        const isHighlighted = targetIds.includes(entityId);
+        const isDimmed = targetIds.length > 0 && !isHighlighted;
+        pill.style.outline  = isHighlighted ? `2px solid ${accent}` : '';
+        pill.style.opacity  = isDimmed ? '0.35' : '1';
+        pill.style.outlineOffset = isHighlighted ? '-2px' : '';
+      });
     };
 
-    const rebuildPills = (mode) => {
-      pillsGrid.innerHTML = '';
-      const ordered = mode ? sortedEntities(mode) : entities;
-      ordered.forEach((entityId, idx) => {
-        const val   = this._humidVal(entityId);
-        const name  = this._name(entityId);
-        const unit2 = this._unit(entityId);
-        const pill  = document.createElement('div');
-        pill.className = 'hedgehog-sensor-pill';
-        const humidColor = this._humidColor(val, allVals, accent);
-        const isTop = mode && idx === 0;
-        if (isTop) pill.style.cssText = `outline:2px solid ${accent};outline-offset:-2px;`;
-        pill.innerHTML = `
-          <div class="hedgehog-pill-icon">💧</div>
-          <div class="hedgehog-pill-humid" style="color:${humidColor}">${val !== null ? this._fmt(val)+unit2 : '—'}</div>
-          <div class="hedgehog-pill-name">${name}</div>`;
-        pill.addEventListener('click', ev => { ev.stopPropagation(); this._openGraphPopup(entityId); });
-        pillsGrid.appendChild(pill);
-      });
+    const getTargetEntities = (mode) => {
+      if (!mode) return [];
+      const withVals = entities.map(e => ({ e, v: this._tempVal(e) })).filter(x => x.v !== null);
+      if (mode === 'low')  { const min = Math.min(...withVals.map(x => x.v)); return withVals.filter(x => x.v === min).map(x => x.e); }
+      if (mode === 'high') { const max = Math.max(...withVals.map(x => x.v)); return withVals.filter(x => x.v === max).map(x => x.e); }
+      if (mode === 'avg')  { const closest = withVals.reduce((a, b) => Math.abs(a.v - avgVal) <= Math.abs(b.v - avgVal) ? a : b); return [closest.e]; }
+      return [];
     };
 
     const makeStatPill = (label, val, mode) => {
@@ -329,17 +339,14 @@ class HedgehogHumidityCard extends HTMLElement {
         ev.stopPropagation();
         const newMode = activeSort === mode ? null : mode;
         activeSort = newMode;
-        statsRow.querySelectorAll('.hedgehog-stat-pill').forEach(p => {
+        statsRow.querySelectorAll('.toad-stat-pill').forEach(p => {
           const isActive = p.dataset.mode === activeSort;
           p.style.background  = isActive ? `${accent}33` : 'rgba(255,255,255,0.06)';
           p.style.borderColor = isActive ? accent         : 'rgba(255,255,255,0.08)';
         });
-        pillsLabel.textContent = activeSort
-          ? `Sorted by ${activeSort}`
-          : `${entities.length} Sensor${entities.length !== 1 ? 's' : ''}`;
-        rebuildPills(activeSort);
+        highlightPills(getTargetEntities(activeSort));
       });
-      el.classList.add('hedgehog-stat-pill');
+      el.classList.add('toad-stat-pill');
       el.dataset.mode = mode;
       return el;
     };
@@ -348,15 +355,13 @@ class HedgehogHumidityCard extends HTMLElement {
     statsRow.appendChild(makeStatPill('Avg',  avgVal, 'avg'));
     statsRow.appendChild(makeStatPill('High', maxVal, 'high'));
 
-    rebuildPills(null);
-
     popup.appendChild(style);
     popup.appendChild(headerRow);
     popup.appendChild(statsRow);
     popup.appendChild(pillsLabel);
     popup.appendChild(pillsGrid);
 
-    overlay.id = 'hedgehog-overlay';
+    overlay.id = 'toad-overlay';
     overlay.appendChild(popup);
     overlay.addEventListener('click', e => { if (e.target === overlay) this._closeOverviewPopup(); });
     document.body.appendChild(overlay);
@@ -374,35 +379,38 @@ class HedgehogHumidityCard extends HTMLElement {
   }
 
   // ── Comfort level helper ──────────────────────────────────────────────────
-  _comfortMessage(val) {
+  _comfortMessage(val, unit) {
     if (val === null) return null;
+    // Normalise to °C for thresholds
+    const isF   = (unit || '').toLowerCase().includes('f');
+    const degC  = isF ? (val - 32) * 5 / 9 : val;
 
-    // Use user-configured thresholds if set
+    // Check user-configured thresholds first (they know their own comfort range)
     const lo = this._lo(), hi = this._hi();
     if (lo !== null && hi !== null) {
-      if (val < lo) return { emoji: '🏜️', text: 'Too dry — consider a humidifier',  color: '#FF9F0A' };
-      if (val > hi) return { emoji: '💦', text: 'Too humid — consider a dehumidifier', color: '#30D158' };
-      return              { emoji: '😊', text: 'Humidity is just right',              color: '#32ADE6' };
+      if (val < lo) return { emoji: '🥶', text: 'A bit chilly in here',       color: '#5AC8FA' };
+      if (val > hi) return { emoji: '🥵', text: 'Getting a little warm',       color: '#FF6B35' };
+      return              { emoji: '😊', text: 'Comfortable temperature',       color: '#34C759' };
     }
 
-    // Fallback: standard indoor comfort bands (% RH)
-    if (val < 20)       return { emoji: '🏜️', text: 'Very dry — skin and airways may suffer', color: '#FF6B35' };
-    if (val < 30)       return { emoji: '🌵', text: 'Quite dry — a humidifier may help',      color: '#FF9F0A' };
-    if (val < 40)       return { emoji: '😌', text: 'Slightly dry but comfortable',            color: '#FFD60A' };
-    if (val <= 60)      return { emoji: '😊', text: 'Ideal humidity — very comfortable',       color: '#32ADE6' };
-    if (val <= 70)      return { emoji: '🌫️', text: 'Getting humid — feeling a bit muggy',     color: '#30D158' };
-    if (val <= 80)      return { emoji: '💦', text: 'Quite humid — mould risk increases',      color: '#34C759' };
-    return              { emoji: '🌧️', text: 'Very humid — consider a dehumidifier',           color: '#5E5CE6' };
+    // Fallback: sensible °C bands
+    if (degC < 10)       return { emoji: '🥶', text: 'Very cold — heat recommended',  color: '#5AC8FA' };
+    if (degC < 16)       return { emoji: '🧥', text: 'Cool — you might want a layer', color: '#64D2FF' };
+    if (degC < 18)       return { emoji: '😌', text: 'Slightly cool but pleasant',    color: '#30D158' };
+    if (degC <= 22)      return { emoji: '😊', text: 'Perfectly comfortable',         color: '#34C759' };
+    if (degC <= 25)      return { emoji: '🌤️', text: 'Warm and comfortable',          color: '#FFD60A' };
+    if (degC <= 28)      return { emoji: '☀️', text: 'Quite warm in here',            color: '#FF9F0A' };
+    return               { emoji: '🥵', text: 'Very hot — consider cooling down',     color: '#FF6B35' };
   }
 
-  _humidColor(val, allVals, accent) {
+  _tempColor(val, allVals, accent) {
     if (val === null || !allVals.length) return accent;
     const min = Math.min(...allVals), max = Math.max(...allVals);
     if (min === max) return accent;
     const t = (val - min) / (max - min);
-    if (t < 0.33) return '#FF9F0A';
+    if (t < 0.33) return '#5AC8FA';
     if (t < 0.66) return accent;
-    return '#30D158';
+    return '#FF9500';
   }
 
   // ── Graph Popup ───────────────────────────────────────────────────────────
@@ -415,10 +423,10 @@ class HedgehogHumidityCard extends HTMLElement {
 
     const cfg     = this._config;
     const popupBg = cfg.popup_bg     || '#1c1c1e';
-    const accent  = cfg.accent_color || '#32ADE6';
+    const accent  = cfg.accent_color || '#007AFF';
     const textCol = cfg.text_color   || '#ffffff';
     const name    = this._name(entityId);
-    const val     = this._humidVal(entityId);
+    const val     = this._tempVal(entityId);
     const unit    = this._unit(entityId);
     const stateObj= this._hass?.states[entityId];
     const attrs   = stateObj?.attributes || {};
@@ -436,19 +444,19 @@ class HedgehogHumidityCard extends HTMLElement {
 
     const style = document.createElement('style');
     style.textContent = `
-      @keyframes hedgehogGraphUp { from{transform:translateY(20px) scale(0.97);opacity:0} to{transform:none;opacity:1} }
-      .hedgehog-graph-popup { animation: hedgehogGraphUp 0.26s cubic-bezier(0.34,1.28,0.64,1); }
-      .hedgehog-close-btn:hover { background:rgba(255,255,255,0.22)!important; }
-      .hedgehog-info-row { display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.07); }
-      .hedgehog-info-row:last-child { border-bottom:none; }
-      .hedgehog-info-label { font-size:12px;color:rgba(255,255,255,0.45);font-weight:500; }
-      .hedgehog-info-value { font-size:13px;font-weight:600;color:rgba(255,255,255,0.9);text-align:right; }
-      .hedgehog-seg-btn { flex:1;text-align:center;padding:7px 4px;font-size:12px;font-weight:600;border-radius:7px;cursor:pointer;color:rgba(255,255,255,0.55);border:none;background:none;transition:all 0.2s;font-family:inherit;touch-action:manipulation; }
-      .hedgehog-seg-btn.active { background:${accent};color:#fff;box-shadow:0 1px 4px rgba(0,0,0,0.35); }
+      @keyframes toadGraphUp { from{transform:translateY(20px) scale(0.97);opacity:0} to{transform:none;opacity:1} }
+      .toad-graph-popup { animation: toadGraphUp 0.26s cubic-bezier(0.34,1.28,0.64,1); }
+      .toad-close-btn:hover { background:rgba(255,255,255,0.22)!important; }
+      .toad-info-row { display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.07); }
+      .toad-info-row:last-child { border-bottom:none; }
+      .toad-info-label { font-size:12px;color:rgba(255,255,255,0.45);font-weight:500; }
+      .toad-info-value { font-size:13px;font-weight:600;color:rgba(255,255,255,0.9);text-align:right; }
+      .toad-seg-btn { flex:1;text-align:center;padding:7px 4px;font-size:12px;font-weight:600;border-radius:7px;cursor:pointer;color:rgba(255,255,255,0.55);border:none;background:none;transition:all 0.2s;font-family:inherit;touch-action:manipulation; }
+      .toad-seg-btn.active { background:${accent};color:#fff;box-shadow:0 1px 4px rgba(0,0,0,0.35); }
     `;
 
     const popup = document.createElement('div');
-    popup.className = 'hedgehog-graph-popup';
+    popup.className = 'toad-graph-popup';
     popup.style.cssText = `background:${popupBg};backdrop-filter:blur(40px) saturate(180%);-webkit-backdrop-filter:blur(40px) saturate(180%);border:1px solid rgba(255,255,255,0.13);border-radius:26px;box-shadow:0 28px 72px rgba(0,0,0,0.65);padding:20px;width:100%;max-width:400px;max-height:85vh;overflow-y:auto;color:${textCol};font-family:${this._haFont()};`;
     popup.addEventListener('touchmove', e => e.stopPropagation(), { passive: true });
 
@@ -457,20 +465,20 @@ class HedgehogHumidityCard extends HTMLElement {
     headerRow.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;';
     headerRow.innerHTML = `
       <span style="font-size:13px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:rgba(255,255,255,0.4);">${name}</span>
-      <button class="hedgehog-close-btn" style="background:rgba(255,255,255,0.1);border:none;border-radius:50%;width:30px;height:30px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.65);font-size:16px;line-height:1;padding:0;transition:background 0.15s;flex-shrink:0;">✕</button>`;
-    headerRow.querySelector('.hedgehog-close-btn').addEventListener('click', closeGraph);
+      <button class="toad-close-btn" style="background:rgba(255,255,255,0.1);border:none;border-radius:50%;width:30px;height:30px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.65);font-size:16px;line-height:1;padding:0;transition:background 0.15s;flex-shrink:0;">✕</button>`;
+    headerRow.querySelector('.toad-close-btn').addEventListener('click', closeGraph);
 
     // Current reading — colour matches the sensor pill in the overview popup
-    const allVals    = this._entities().map(e => this._humidVal(e)).filter(v => v !== null);
-    const humidColor = this._humidColor(val, allVals, accent);
+    const allVals   = this._entities().map(e => this._tempVal(e)).filter(v => v !== null);
+    const tempColor = this._tempColor(val, allVals, accent);
     const readingRow = document.createElement('div');
     readingRow.style.cssText = 'display:flex;align-items:baseline;gap:6px;margin-bottom:14px;';
     readingRow.innerHTML = `
-      <span style="font-size:52px;font-weight:700;letter-spacing:-2px;color:${humidColor};line-height:1;">${val !== null ? this._fmt(val) : '—'}</span>
+      <span style="font-size:52px;font-weight:700;letter-spacing:-2px;color:${tempColor};line-height:1;">${val !== null ? this._fmt(val) : '—'}</span>
       <span style="font-size:16px;color:rgba(255,255,255,0.4);font-weight:500;padding-bottom:6px;">${unit}</span>`;
 
     // Comfort message banner
-    const comfort = this._comfortMessage(val);
+    const comfort = this._comfortMessage(val, unit);
     const comfortBanner = document.createElement('div');
     if (comfort) {
       comfortBanner.style.cssText = `display:flex;align-items:center;gap:9px;background:${comfort.color}18;border:1px solid ${comfort.color}40;border-radius:12px;padding:9px 13px;margin-bottom:12px;`;
@@ -484,15 +492,15 @@ class HedgehogHumidityCard extends HTMLElement {
     segWrap.style.cssText = 'display:flex;background:rgba(118,118,128,0.2);border-radius:10px;padding:3px;gap:2px;margin-bottom:12px;';
     [1, 3, 6, 12, 24].forEach(h => {
       const btn = document.createElement('button');
-      btn.className = 'hedgehog-seg-btn' + (h === this._graphHours ? ' active' : '');
+      btn.className = 'toad-seg-btn' + (h === this._graphHours ? ' active' : '');
       btn.textContent = `${h}h`;
       btn.dataset.hours = h;
       const switchHours = e => {
         if (e.type === 'touchend') e.preventDefault();
         this._graphHours = h;
-        segWrap.querySelectorAll('.hedgehog-seg-btn').forEach(b => b.classList.toggle('active', parseInt(b.dataset.hours) === h));
+        segWrap.querySelectorAll('.toad-seg-btn').forEach(b => b.classList.toggle('active', parseInt(b.dataset.hours) === h));
         graphWrap.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:rgba(255,255,255,0.25);font-size:12px;">Loading…</div>`;
-        this._loadHumidGraph(entityId, graphWrap, accent, h);
+        this._loadTempGraph(entityId, graphWrap, accent, h);
       };
       btn.addEventListener('click', switchHours);
       btn.addEventListener('touchend', switchHours);
@@ -523,8 +531,8 @@ class HedgehogHumidityCard extends HTMLElement {
 
     infoRows.forEach(({ label, value }) => {
       const row = document.createElement('div');
-      row.className = 'hedgehog-info-row';
-      row.innerHTML = `<span class="hedgehog-info-label">${label}</span><span class="hedgehog-info-value">${value}</span>`;
+      row.className = 'toad-info-row';
+      row.innerHTML = `<span class="toad-info-label">${label}</span><span class="toad-info-value">${value}</span>`;
       infoWrap.appendChild(row);
     });
 
@@ -541,10 +549,10 @@ class HedgehogHumidityCard extends HTMLElement {
     document.body.appendChild(graphOverlay);
     this._graphPopup = graphOverlay;
 
-    this._loadHumidGraph(entityId, graphWrap, accent, this._graphHours);
+    this._loadTempGraph(entityId, graphWrap, accent, this._graphHours);
   }
 
-  async _loadHumidGraph(entityId, container, accent, hours) {
+  async _loadTempGraph(entityId, container, accent, hours) {
     try {
       const end   = new Date();
       const start = new Date(end - hours * 3600000);
@@ -561,15 +569,15 @@ class HedgehogHumidityCard extends HTMLElement {
 
       const values     = valid.map(s => parseFloat(s.state));
       const timestamps = valid.map(s => s.last_changed || s.last_updated);
-      container.innerHTML = this._buildHumidGraph(values, timestamps, accent);
+      container.innerHTML = this._buildTempGraph(values, timestamps, accent);
       const svg = container.querySelector('svg');
-      if (svg) this._attachHumidCrosshair(svg, values, timestamps, this._unit(entityId));
+      if (svg) this._attachTempCrosshair(svg, values, timestamps, this._unit(entityId));
     } catch(e) {
       container.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:rgba(255,255,255,0.25);font-size:12px;">Could not load history</div>`;
     }
   }
 
-  _attachHumidCrosshair(svg, values, times, unit) {
+  _attachTempCrosshair(svg, values, times, unit) {
     const W     = 380, H = 140;
     const pad   = { top: 12, right: 10, bottom: 22, left: 34 };
     const plotW = W - pad.left - pad.right;
@@ -599,7 +607,7 @@ class HedgehogHumidityCard extends HTMLElement {
       const frac     = exactIdx - lIdx;
       const val      = values[lIdx] + (values[rIdx] - values[lIdx]) * frac;
       const dec      = parseInt(this._config.decimals ?? 1);
-      const label    = val.toFixed(isNaN(dec) ? 1 : dec) + (unit || '%');
+      const label    = val.toFixed(isNaN(dec) ? 1 : dec) + (unit || '°');
       const color    = this._graphColor(val);
 
       const snapIdx = frac < 0.5 ? lIdx : rIdx;
@@ -738,7 +746,7 @@ class HedgehogHumidityCard extends HTMLElement {
     return getComputedStyle(this).fontFamily || 'inherit';
   }
 
-  _buildHumidGraph(values, timestamps, accent) {
+  _buildTempGraph(values, timestamps, accent) {
     const W = 380, H = 140;
     const pad = { top: 12, right: 10, bottom: 22, left: 34 };
     const plotW = W - pad.left - pad.right;
@@ -748,6 +756,7 @@ class HedgehogHumidityCard extends HTMLElement {
     const lo     = this._lo(), hi = this._hi();
     const hasThresholds = lo !== null && hi !== null;
 
+    // Expand Y-range to include thresholds so lines are always visible
     const vpad = Math.max((rawMax - rawMin) * 0.18, 0.5);
     const min  = hasThresholds ? Math.min(rawMin - vpad, lo * 0.9) : rawMin - vpad;
     const max  = hasThresholds ? Math.max(rawMax + vpad, hi * 1.1) : rawMax + vpad;
@@ -758,6 +767,7 @@ class HedgehogHumidityCard extends HTMLElement {
 
     const clampY = v => Math.max(pad.top, Math.min(pad.top + plotH, pad.top + plotH - ((v - min) / range) * plotH));
 
+    // Coloured segments — each segment takes the midpoint value's colour
     let segments = '';
     for (let i = 1; i < values.length; i++) {
       const mid = (values[i-1] + values[i]) / 2;
@@ -765,9 +775,11 @@ class HedgehogHumidityCard extends HTMLElement {
       segments += `<line x1="${xs[i-1].toFixed(1)}" y1="${ys[i-1].toFixed(1)}" x2="${xs[i].toFixed(1)}" y2="${ys[i].toFixed(1)}" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>`;
     }
 
+    // Gradient fill uses accent colour
     const linePath = xs.map((x, i) => `${i===0?'M':'L'}${x.toFixed(1)},${ys[i].toFixed(1)}`).join(' ');
     const fillPath = linePath + ` L${xs[xs.length-1].toFixed(1)},${(pad.top+plotH).toFixed(1)} L${pad.left},${(pad.top+plotH).toFixed(1)} Z`;
 
+    // Y-axis grid labels
     const steps = 4;
     const dec   = Math.min(parseInt(this._config.decimals ?? 1), 1);
     const svgFont = this._haFont();
@@ -779,11 +791,12 @@ class HedgehogHumidityCard extends HTMLElement {
       yLabels += `<line x1="${pad.left}" y1="${y.toFixed(1)}" x2="${W-pad.right}" y2="${y.toFixed(1)}" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>`;
     }
 
+    // Threshold dashed lines + labels (dolphin-style)
     let thresholdLines = '';
     if (hasThresholds) {
       const loY    = clampY(lo), hiY = clampY(hi);
-      const lowCol = this._config.low_color  || '#FF9F0A';
-      const hiCol  = this._config.high_color || '#30D158';
+      const lowCol = this._config.low_color  || '#5AC8FA';
+      const hiCol  = this._config.high_color || '#FF9500';
       const dec2   = parseInt(this._config.decimals ?? 1);
       thresholdLines = `
         <line x1="${pad.left}" y1="${loY.toFixed(1)}" x2="${W-pad.right}" y2="${loY.toFixed(1)}" stroke="${lowCol}" stroke-width="1" stroke-dasharray="4 3" opacity="0.5"/>
@@ -792,6 +805,7 @@ class HedgehogHumidityCard extends HTMLElement {
         <text x="${pad.left - 3}" y="${(hiY + 3).toFixed(1)}" fill="${hiCol}" font-size="7" text-anchor="end" opacity="0.75" font-family="${svgFont}">${hi.toFixed(isNaN(dec2)?1:dec2)}</text>`;
     }
 
+    // X-axis time labels
     const fmt = ts => { try { const d = new Date(ts); return `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`; } catch { return ''; } };
     let xLabels = '';
     if (timestamps.length >= 2) {
@@ -808,27 +822,28 @@ class HedgehogHumidityCard extends HTMLElement {
     const lastLbl = lastVal.toFixed(isNaN(dec2) ? 1 : dec2);
     const dotColor = this._graphColor(lastVal);
 
+    // Min/max markers only when no thresholds (thresholds replace them visually)
     let minMaxMarks = '';
     if (!hasThresholds) {
       const minIdx = values.indexOf(rawMin);
       const maxIdx = values.indexOf(rawMax);
       minMaxMarks = `
-        <text x="${xs[minIdx].toFixed(1)}" y="${(ys[minIdx]+12).toFixed(1)}" fill="#FF9F0A" font-size="7" text-anchor="middle" font-family="${svgFont}">${rawMin.toFixed(isNaN(dec2)?1:dec2)}</text>
-        <text x="${xs[maxIdx].toFixed(1)}" y="${(ys[maxIdx]-5).toFixed(1)}" fill="#30D158" font-size="7" text-anchor="middle" font-family="${svgFont}">${rawMax.toFixed(isNaN(dec2)?1:dec2)}</text>`;
+        <text x="${xs[minIdx].toFixed(1)}" y="${(ys[minIdx]+12).toFixed(1)}" fill="#5AC8FA" font-size="7" text-anchor="middle" font-family="${svgFont}">${rawMin.toFixed(isNaN(dec2)?1:dec2)}</text>
+        <text x="${xs[maxIdx].toFixed(1)}" y="${(ys[maxIdx]-5).toFixed(1)}" fill="#FF9500" font-size="7" text-anchor="middle" font-family="${svgFont}">${rawMax.toFixed(isNaN(dec2)?1:dec2)}</text>`;
     }
 
     return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="overflow:visible;display:block;">
       <defs>
-        <linearGradient id="hedgehogGrad" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id="toadGrad" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stop-color="${accent}" stop-opacity="0.22"/>
           <stop offset="100%" stop-color="${accent}" stop-opacity="0.02"/>
         </linearGradient>
-        <clipPath id="hedgehogClip"><rect x="${pad.left}" y="${pad.top}" width="${plotW}" height="${plotH}"/></clipPath>
+        <clipPath id="toadClip"><rect x="${pad.left}" y="${pad.top}" width="${plotW}" height="${plotH}"/></clipPath>
       </defs>
       ${yLabels}
       ${thresholdLines}
-      <path d="${fillPath}" fill="url(#hedgehogGrad)" clip-path="url(#hedgehogClip)"/>
-      <g clip-path="url(#hedgehogClip)">${segments}</g>
+      <path d="${fillPath}" fill="url(#toadGrad)" clip-path="url(#toadClip)"/>
+      <g clip-path="url(#toadClip)">${segments}</g>
       <circle cx="${lastX}" cy="${lastY}" r="4.5" fill="${dotColor}" stroke="rgba(0,0,0,0.5)" stroke-width="1.5"/>
       <text x="${parseFloat(lastX)+8}" y="${(parseFloat(lastY)+4).toFixed(1)}" fill="${dotColor}" font-size="9" font-weight="700" font-family="${svgFont}">${lastLbl}</text>
       ${minMaxMarks}
@@ -839,8 +854,13 @@ class HedgehogHumidityCard extends HTMLElement {
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Visual Editor
+//
+//  KEY DESIGN: _renderEditor() builds the DOM once. After that, setConfig()
+//  only updates _config in-place and syncs non-focused fields — it NEVER
+//  rebuilds innerHTML. This prevents HA from re-rendering and stealing focus
+//  from text inputs on iPhone mid-keystroke.
 // ─────────────────────────────────────────────────────────────────────────────
-class HedgehogHumidityCardEditor extends HTMLElement {
+class ToadTemperatureCardEditor extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
@@ -856,6 +876,7 @@ class HedgehogHumidityCardEditor extends HTMLElement {
     this._hass = hass;
     if (this._config && Object.keys(this._config).length) {
       if (!this._rendered) this._renderEditor();
+      // Don't re-render on hass updates — entity states may refresh
     }
   }
 
@@ -863,14 +884,18 @@ class HedgehogHumidityCardEditor extends HTMLElement {
     const prev = this._config;
     this._config = { ...config };
 
+    // First call — build the DOM
     if (!this._rendered) {
       if (this._hass) this._renderEditor();
       return;
     }
 
+    // Subsequent calls (HA echoes config-changed back to us):
+    // Only sync values that are NOT currently focused to avoid clobbering typing
     this._syncFieldValues(prev);
   }
 
+  // ── Sync field values in-place without touching focused elements ───────────
   _syncFieldValues(prev) {
     const cfg     = this._config;
     const root    = this.shadowRoot;
@@ -881,8 +906,11 @@ class HedgehogHumidityCardEditor extends HTMLElement {
       el.value = val;
     };
 
-    maybeSet(root.getElementById('title'), cfg.title || '');
-    maybeSet(root.getElementById('decimals'), cfg.decimals ?? 1);
+    const titleEl = root.getElementById('title');
+    maybeSet(titleEl, cfg.title || '');
+
+    const decimalsEl = root.getElementById('decimals');
+    maybeSet(decimalsEl, cfg.decimals ?? 1);
 
     const loEl2 = root.getElementById('low_threshold');
     if (loEl2 && loEl2 !== focused) {
@@ -893,11 +921,12 @@ class HedgehogHumidityCardEditor extends HTMLElement {
       hiEl2.value = (cfg.high_threshold !== null && cfg.high_threshold !== undefined) ? cfg.high_threshold : '';
     }
 
-    HEDGEHOG_COLOUR_FIELDS.forEach(field => {
+    // Sync colour pickers (these can't be focused during a colour pick on iPhone)
+    TOAD_COLOUR_FIELDS.forEach(field => {
       const card = root.querySelector(`.colour-card[data-key="${field.key}"]`);
       if (!card) return;
       const val = cfg[field.key] || field.default;
-      if (prev[field.key] === val) return;
+      if (prev[field.key] === val) return; // unchanged
       const preview = card.querySelector('.colour-swatch-preview');
       const dot     = card.querySelector('.colour-dot');
       const picker  = card.querySelector('input[type=color]');
@@ -908,11 +937,13 @@ class HedgehogHumidityCardEditor extends HTMLElement {
       if (hexIn  && hexIn  !== focused) hexIn.value  = val;
     });
 
+    // Sync entity list checkboxes & friendly-name inputs if entities changed
     if (JSON.stringify(prev.entities) !== JSON.stringify(cfg.entities)) {
       this._syncEntityChecks();
     }
   }
 
+  // ── Only update check states + friendly-name inputs, never rebuild list ────
   _syncEntityChecks() {
     const root     = this.shadowRoot;
     const selected = this._config.entities || [];
@@ -922,25 +953,20 @@ class HedgehogHumidityCardEditor extends HTMLElement {
       const cb  = item.querySelector('input[type=checkbox]');
       if (cb) cb.checked = selected.includes(id);
       item.draggable = selected.includes(id);
-      const fnRow   = item.querySelector('.fn-row');
-      if (fnRow) fnRow.classList.toggle('visible', selected.includes(id));
       const fnInput = item.querySelector('.fn-input');
       if (fnInput && fnInput !== root.activeElement) fnInput.value = fn[id] || '';
     });
   }
 
-  // Detect humidity sensors by unit_of_measurement === '%' and device_class === 'humidity'
-  _allHumidEntities() {
+  // Strict: only sensors that report a ° unit
+  _allTempEntities() {
     if (!this._hass) return [];
     return Object.keys(this._hass.states)
       .filter(id => {
         const dom  = id.split('.')[0];
-        if (!['sensor'].includes(dom)) return false;
-        const attrs = this._hass.states[id].attributes || {};
-        const unit  = attrs.unit_of_measurement || '';
-        const dc    = attrs.device_class || '';
-        // Accept % unit with humidity device_class, or % unit with "humid" in name/id as fallback
-        return unit === '%' && (dc === 'humidity' || id.toLowerCase().includes('humid') || (attrs.friendly_name || '').toLowerCase().includes('humid'));
+        if (!['sensor', 'weather', 'climate'].includes(dom)) return false;
+        const unit = this._hass.states[id].attributes?.unit_of_measurement || '';
+        return unit.includes('°');
       })
       .sort((a, b) => {
         const na = this._hass.states[a]?.attributes?.friendly_name || a;
@@ -949,9 +975,10 @@ class HedgehogHumidityCardEditor extends HTMLElement {
       });
   }
 
+  // ── Build DOM once ─────────────────────────────────────────────────────────
   _renderEditor() {
     this._rendered    = true;
-    this._allEntities = this._allHumidEntities();
+    this._allEntities = this._allTempEntities();
     const cfg         = this._config;
 
     this.shadowRoot.innerHTML = `
@@ -964,14 +991,20 @@ class HedgehogHumidityCardEditor extends HTMLElement {
         .field-row:last-child { border-bottom: none; }
         .field-label { flex: 1; font-size: 13px; font-weight: 500; color: var(--primary-text-color); }
         .field-desc  { font-size: 11px; color: var(--secondary-text-color); margin-top: 1px; }
+
+        /* Text & number inputs — no re-render on these, ever */
         .text-input { padding: 8px 10px; border: 1px solid var(--divider-color, rgba(0,0,0,0.15)); border-radius: 8px; background: var(--secondary-background-color); color: var(--primary-text-color); font-size: 14px; font-family: inherit; flex: 1; min-width: 0; outline: none; -webkit-appearance: none; }
-        .text-input:focus { border-color: #32ADE6; }
+        .text-input:focus { border-color: #007AFF; }
         .num-input  { padding: 8px 10px; border: 1px solid var(--divider-color, rgba(0,0,0,0.15)); border-radius: 8px; background: var(--secondary-background-color); color: var(--primary-text-color); font-size: 14px; font-family: inherit; width: 64px; text-align: center; outline: none; -webkit-appearance: none; }
-        .num-input:focus { border-color: #32ADE6; }
+        .num-input:focus { border-color: #007AFF; }
+
+        /* Search */
         .search-wrap { padding: 8px 10px; border-bottom: 1px solid var(--divider-color, rgba(0,0,0,0.07)); }
         .search-box { width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid var(--divider-color, rgba(0,0,0,0.15)); border-radius: 8px; background: var(--secondary-background-color); color: var(--primary-text-color); font-size: 14px; font-family: inherit; outline: none; -webkit-appearance: none; }
         .search-box::placeholder { color: var(--secondary-text-color); }
-        .search-box:focus { border-color: #32ADE6; }
+        .search-box:focus { border-color: #007AFF; }
+
+        /* Entity list */
         .checklist { max-height: 340px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
         .check-item { display: flex; flex-direction: column; padding: 10px 12px; border-bottom: 1px solid var(--divider-color, rgba(0,0,0,0.06)); background: var(--card-background-color); gap: 6px; user-select: none; }
         .check-item:last-child { border-bottom: none; }
@@ -981,19 +1014,23 @@ class HedgehogHumidityCardEditor extends HTMLElement {
         .drag-handle:active { cursor: grabbing; }
         .entity-name { font-size: 13px; font-weight: 500; color: var(--primary-text-color); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .entity-id   { font-size: 10px; color: var(--secondary-text-color); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .entity-val  { font-size: 12px; font-weight: 600; color: var(--primary-text-color); white-space: nowrap; flex-shrink: 0; }
+        .entity-temp { font-size: 12px; font-weight: 600; color: var(--primary-text-color); white-space: nowrap; flex-shrink: 0; }
+        /* Friendly name row — only visible when checked */
         .fn-row { display: none; padding: 0 2px 2px 32px; }
         .fn-row.visible { display: flex; align-items: center; gap: 6px; }
         .fn-label { font-size: 11px; color: var(--secondary-text-color); white-space: nowrap; flex-shrink: 0; }
         .fn-input { flex: 1; padding: 5px 8px; border: 1px solid var(--divider-color, rgba(0,0,0,0.15)); border-radius: 7px; background: var(--secondary-background-color); color: var(--primary-text-color); font-size: 12px; font-family: inherit; outline: none; -webkit-appearance: none; min-width: 0; }
-        .fn-input:focus { border-color: #32ADE6; }
+        .fn-input:focus { border-color: #007AFF; }
         .fn-input::placeholder { color: var(--secondary-text-color); opacity: 0.7; }
+        /* iOS-style toggle */
         .toggle-switch { position: relative; width: 44px; height: 26px; flex-shrink: 0; }
         .toggle-switch input { opacity: 0; width: 0; height: 0; position: absolute; }
         .toggle-track { position: absolute; inset: 0; border-radius: 26px; background: rgba(120,120,128,0.32); cursor: pointer; transition: background 0.25s ease; }
         .toggle-track::after { content: ''; position: absolute; width: 22px; height: 22px; border-radius: 50%; background: #fff; top: 2px; left: 2px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); transition: transform 0.25s ease; }
         .toggle-switch input:checked + .toggle-track { background: #34C759; }
         .toggle-switch input:checked + .toggle-track::after { transform: translateX(18px); }
+
+        /* Colour grid */
         .colour-grid  { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px; }
         .colour-card  { background: var(--secondary-background-color); border-radius: 10px; padding: 10px; display: flex; gap: 10px; align-items: flex-start; }
         .colour-swatch { display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; }
@@ -1005,7 +1042,7 @@ class HedgehogHumidityCardEditor extends HTMLElement {
         .colour-hex-row { display: flex; align-items: center; gap: 4px; }
         .colour-dot   { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
         .colour-hex   { font-size: 11px; border: 1px solid var(--divider-color); border-radius: 5px; padding: 3px 5px; background: var(--card-background-color); color: var(--primary-text-color); font-family: monospace; width: 70px; outline: none; -webkit-appearance: none; }
-        .colour-hex:focus { border-color: #32ADE6; }
+        .colour-hex:focus { border-color: #007AFF; }
         .colour-edit-icon { font-size: 12px; color: var(--secondary-text-color); }
         .auto-badge { font-size: 9px; background: #34C75922; color: #34C759; border: 1px solid #34C75944; border-radius: 6px; padding: 1px 6px; font-weight: 700; }
       </style>
@@ -1019,38 +1056,38 @@ class HedgehogHumidityCardEditor extends HTMLElement {
               <div class="field-label">Title <span style="font-size:10px;color:var(--secondary-text-color);font-weight:400;">(optional)</span></div>
               <div class="field-desc">Label shown on the pill card. Leave blank to hide.</div>
             </div>
-            <input class="text-input" id="title" type="text" value="${cfg.title || ''}" placeholder="e.g. Humidity" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+            <input class="text-input" id="title" type="text" value="${cfg.title || ''}" placeholder="e.g. Temperature" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
           </div>
           <div class="field-row">
             <div>
               <div class="field-label">Decimal Places</div>
-              <div class="field-desc">Humidity display precision (0–3).</div>
+              <div class="field-desc">Temperature display precision (0–3).</div>
             </div>
             <input class="num-input" id="decimals" type="number" min="0" max="3" step="1" value="${cfg.decimals ?? 1}" inputmode="numeric">
           </div>
         </div>
       </div>
 
-      <!-- Humidity Thresholds -->
+      <!-- Temperature Thresholds -->
       <div class="section">
         <div class="section-title">Graph Thresholds <span style="font-size:9px;font-weight:400;text-transform:none;letter-spacing:0;opacity:0.6;">(optional)</span></div>
         <div class="card-block">
           <div style="padding:10px 14px 6px;font-size:11px;color:var(--secondary-text-color);line-height:1.5;">
-            Set a minimum and maximum humidity. The graph line will change colour — warm amber below minimum, your accent colour in range, fresh green above maximum.
+            Set a minimum and maximum temperature. The graph line will change colour — cool blue below minimum, your accent colour in range, warm orange above maximum.
           </div>
           <div class="field-row">
             <div>
-              <div class="field-label">Minimum humidity</div>
-              <div class="field-desc">Graph line turns warm amber below this value.</div>
+              <div class="field-label">Minimum temperature</div>
+              <div class="field-desc">Graph line turns cool blue below this value.</div>
             </div>
-            <input class="num-input" id="low_threshold" type="number" step="0.1" placeholder="e.g. 30" value="" inputmode="decimal">
+            <input class="num-input" id="low_threshold" type="number" step="0.1" placeholder="e.g. 18" value="" inputmode="decimal">
           </div>
           <div class="field-row">
             <div>
-              <div class="field-label">Maximum humidity</div>
-              <div class="field-desc">Graph line turns fresh green above this value.</div>
+              <div class="field-label">Maximum temperature</div>
+              <div class="field-desc">Graph line turns warm orange above this value.</div>
             </div>
-            <input class="num-input" id="high_threshold" type="number" step="0.1" placeholder="e.g. 60" value="" inputmode="decimal">
+            <input class="num-input" id="high_threshold" type="number" step="0.1" placeholder="e.g. 24" value="" inputmode="decimal">
           </div>
         </div>
       </div>
@@ -1058,7 +1095,7 @@ class HedgehogHumidityCardEditor extends HTMLElement {
       <!-- Entity selection -->
       <div class="section">
         <div class="section-title">
-          Humidity Sensors
+          Temperature Sensors
           <span class="auto-badge">AUTO-DETECTED</span>
         </div>
         <div class="card-block">
@@ -1068,7 +1105,7 @@ class HedgehogHumidityCardEditor extends HTMLElement {
           <div class="checklist" id="entity-list"></div>
         </div>
         <div style="font-size:10px;color:var(--secondary-text-color);padding:4px 2px;">
-          Shows only sensors with humidity device class and % unit. Toggle to select, drag grip to reorder.
+          Shows only sensors reporting a °c or °f unit. Toggle to select, drag grip to reorder.
         </div>
       </div>
 
@@ -1081,19 +1118,24 @@ class HedgehogHumidityCardEditor extends HTMLElement {
       </div>
     `;
 
-    // Wire title
+    // ── Wire title: save only on blur (not on every keystroke) ────────────────
     const titleEl = this.shadowRoot.getElementById('title');
-    titleEl.addEventListener('blur', () => this._commitConfig('title', titleEl.value.trim()));
-    titleEl.addEventListener('keydown', e => { if (e.key === 'Enter') titleEl.blur(); });
+    titleEl.addEventListener('blur', () => {
+      this._commitConfig('title', titleEl.value.trim());
+    });
+    // Also save on Enter
+    titleEl.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { titleEl.blur(); }
+    });
 
-    // Wire decimals
+    // ── Wire decimals ─────────────────────────────────────────────────────────
     const decimalsEl = this.shadowRoot.getElementById('decimals');
     decimalsEl.addEventListener('change', () => {
       const v = parseInt(decimalsEl.value);
       this._commitConfig('decimals', isNaN(v) ? 1 : Math.max(0, Math.min(3, v)));
     });
 
-    // Wire thresholds
+    // ── Wire thresholds — save on blur/Enter only ────────────────────────────
     const loEl = this.shadowRoot.getElementById('low_threshold');
     const hiEl = this.shadowRoot.getElementById('high_threshold');
     if (loEl) {
@@ -1115,7 +1157,7 @@ class HedgehogHumidityCardEditor extends HTMLElement {
       hiEl.addEventListener('keydown', e => { if (e.key === 'Enter') hiEl.blur(); });
     }
 
-    // Wire search
+    // ── Wire search — filter in-place, never re-render ────────────────────────
     const searchEl = this.shadowRoot.getElementById('entity-search');
     searchEl.addEventListener('input', () => {
       this._searchTerm = searchEl.value;
@@ -1127,20 +1169,22 @@ class HedgehogHumidityCardEditor extends HTMLElement {
     this._setupReordering();
   }
 
+  // ── Build entity list rows once ────────────────────────────────────────────
   _renderEntityList() {
     const list     = this.shadowRoot.getElementById('entity-list');
     if (!list) return;
-    const selected = this._config.entities      || [];
+    const selected = this._config.entities     || [];
     const fn       = this._config.friendly_names || {};
     const all      = this._allEntities;
 
     list.innerHTML = '';
 
     if (!all.length) {
-      list.innerHTML = `<div style="padding:14px;font-size:12px;color:var(--secondary-text-color);">No humidity sensors found. Make sure your sensors have device_class: humidity set.</div>`;
+      list.innerHTML = `<div style="padding:14px;font-size:12px;color:var(--secondary-text-color);">No temperature sensors (°c/°f) found in Home Assistant.</div>`;
       return;
     }
 
+    // Selected first (configured order), then unselected alphabetically
     const selectedInOrder = selected.filter(id => all.includes(id));
     const unselected      = all.filter(id => !selected.includes(id));
     const ordered         = [...selectedInOrder, ...unselected];
@@ -1149,10 +1193,11 @@ class HedgehogHumidityCardEditor extends HTMLElement {
       const isChecked  = selected.includes(entityId);
       const stateObj   = this._hass?.states[entityId];
       const haName     = stateObj?.attributes?.friendly_name || entityId.split('.').pop().replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
-      const unit       = stateObj?.attributes?.unit_of_measurement || '%';
+      const rawUnit    = stateObj?.attributes?.unit_of_measurement || '°';
+      const unit       = rawUnit.replace('°C', '°c').replace('°F', '°f');
       const rawVal     = parseFloat(stateObj?.state);
       const dec        = parseInt(this._config.decimals ?? 1);
-      const valStr     = isNaN(rawVal) ? '—' : `${rawVal.toFixed(isNaN(dec)?1:dec)}${unit}`;
+      const tempStr    = isNaN(rawVal) ? '—' : `${rawVal.toFixed(isNaN(dec)?1:dec)}${unit}`;
       const searchKey  = (haName + ' ' + entityId).toLowerCase();
       const savedFn    = fn[entityId] || '';
 
@@ -1171,7 +1216,7 @@ class HedgehogHumidityCardEditor extends HTMLElement {
             <div class="entity-name">${haName}</div>
             <div class="entity-id">${entityId}</div>
           </div>
-          <span class="entity-val">${valStr}</span>
+          <span class="entity-temp">${tempStr}</span>
           <label class="toggle-switch">
             <input type="checkbox" ${isChecked ? 'checked' : ''} data-id="${entityId}">
             <span class="toggle-track"></span>
@@ -1182,6 +1227,7 @@ class HedgehogHumidityCardEditor extends HTMLElement {
           <input class="fn-input" type="text" value="${savedFn}" placeholder="${haName}" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
         </div>`;
 
+      // Toggle checkbox
       item.querySelector('input[type=checkbox]').addEventListener('change', e => {
         const current = [...(this._config.entities || [])];
         const id      = e.target.dataset.id;
@@ -1199,6 +1245,7 @@ class HedgehogHumidityCardEditor extends HTMLElement {
         this._commitConfig('entities', current);
       });
 
+      // Friendly name — save on blur only (not each keystroke)
       const fnInput = item.querySelector('.fn-input');
       fnInput.addEventListener('blur', () => {
         const names = { ...(this._config.friendly_names || {}) };
@@ -1207,7 +1254,9 @@ class HedgehogHumidityCardEditor extends HTMLElement {
         else     delete names[entityId];
         this._commitConfig('friendly_names', names);
       });
-      fnInput.addEventListener('keydown', e => { if (e.key === 'Enter') fnInput.blur(); });
+      fnInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter') fnInput.blur();
+      });
 
       list.appendChild(item);
     });
@@ -1215,6 +1264,7 @@ class HedgehogHumidityCardEditor extends HTMLElement {
     this._filterEntityList();
   }
 
+  // Filter in-place — never touches innerHTML or focus
   _filterEntityList() {
     const list = this.shadowRoot.getElementById('entity-list');
     if (!list) return;
@@ -1224,6 +1274,7 @@ class HedgehogHumidityCardEditor extends HTMLElement {
     });
   }
 
+  // Drag-and-drop reordering
   _setupReordering() {
     const list = this.shadowRoot.getElementById('entity-list');
     if (!list) return;
@@ -1296,7 +1347,7 @@ class HedgehogHumidityCardEditor extends HTMLElement {
     if (!grid) return;
     grid.innerHTML = '';
 
-    HEDGEHOG_COLOUR_FIELDS.forEach(field => {
+    TOAD_COLOUR_FIELDS.forEach(field => {
       const savedVal = this._config[field.key] || field.default;
 
       const card = document.createElement('div');
@@ -1329,9 +1380,11 @@ class HedgehogHumidityCardEditor extends HTMLElement {
         hexIn.value              = hex;
       };
 
+      // Colour picker: update visual immediately, commit on change (not input)
       picker.addEventListener('input',  () => applyVisual(picker.value));
       picker.addEventListener('change', () => { applyVisual(picker.value); this._commitConfig(field.key, picker.value); });
 
+      // Hex text: commit only on blur or Enter
       hexIn.addEventListener('input', () => {
         const v = hexIn.value.trim();
         if (/^#[0-9a-fA-F]{6}$/.test(v)) applyVisual(v);
@@ -1347,8 +1400,11 @@ class HedgehogHumidityCardEditor extends HTMLElement {
     });
   }
 
+  // _commitConfig saves to _config and fires config-changed — but does NOT
+  // re-render the editor. HA will call setConfig() back, which runs
+  // _syncFieldValues() to update only non-focused fields safely.
   _commitConfig(key, value) {
-    this._config = { ...this._config, [key]: value, type: 'custom:hedgehog-humidity-card' };
+    this._config = { ...this._config, [key]: value, type: 'custom:toad-temperature-card' };
     this.dispatchEvent(new CustomEvent('config-changed', {
       detail:   { config: this._config },
       bubbles:  true,
@@ -1358,19 +1414,19 @@ class HedgehogHumidityCardEditor extends HTMLElement {
 }
 
 // ─── Registration ─────────────────────────────────────────────────────────────
-if (!customElements.get('hedgehog-humidity-card')) {
-  customElements.define('hedgehog-humidity-card', HedgehogHumidityCard);
+if (!customElements.get('toad-temperature-card')) {
+  customElements.define('toad-temperature-card', ToadTemperatureCard);
 }
-if (!customElements.get('hedgehog-humidity-card-editor')) {
-  customElements.define('hedgehog-humidity-card-editor', HedgehogHumidityCardEditor);
+if (!customElements.get('toad-temperature-card-editor')) {
+  customElements.define('toad-temperature-card-editor', ToadTemperatureCardEditor);
 }
 
 window.customCards = window.customCards || [];
-if (!window.customCards.some(c => c.type === 'hedgehog-humidity-card')) {
+if (!window.customCards.some(c => c.type === 'toad-temperature-card')) {
   window.customCards.push({
-    type:        'hedgehog-humidity-card',
-    name:        'Hedgehog Humidity Card',
+    type:        'toad-temperature-card',
+    name:        'Toad Temperature Card',
     preview:     true,
-    description: 'Compact pill card showing humidity range across multiple sensors, with sensor overview and history graph popups.',
+    description: 'Compact pill card showing temperature range across multiple sensors, with sensor overview and history graph popups.',
   });
 }
