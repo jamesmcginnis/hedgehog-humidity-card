@@ -270,7 +270,11 @@ class HedgehogHumidityCard extends HTMLElement {
     const unit   = this._unit(entities[0]);
     const minVal = vals.length ? Math.min(...vals) : null;
     const maxVal = vals.length ? Math.max(...vals) : null;
-    const avgVal = vals.length ? vals.reduce((a,b) => a+b, 0) / vals.length : null;
+    const lo = this._lo(), hi = this._hi();
+    const inRangeEntities = (lo !== null && hi !== null)
+      ? entities.filter(e => { const v = this._humidVal(e); return v !== null && v >= lo && v <= hi; })
+      : [];
+    const inRangeVal = (lo !== null && hi !== null) ? inRangeEntities.length : null;
 
     // Stats bar — clicking highlights the matching sensor pill(s) in place
     const statsRow = document.createElement('div');
@@ -319,39 +323,43 @@ class HedgehogHumidityCard extends HTMLElement {
     const getTargetEntities = (mode) => {
       if (!mode) return [];
       const withVals = entities.map(e => ({ e, v: this._humidVal(e) })).filter(x => x.v !== null);
-      if (mode === 'low')  { const min = Math.min(...withVals.map(x => x.v)); return withVals.filter(x => x.v === min).map(x => x.e); }
-      if (mode === 'high') { const max = Math.max(...withVals.map(x => x.v)); return withVals.filter(x => x.v === max).map(x => x.e); }
-      if (mode === 'avg')  { const closest = withVals.reduce((a, b) => Math.abs(a.v - avgVal) <= Math.abs(b.v - avgVal) ? a : b); return [closest.e]; }
+      if (mode === 'low')   { const min = Math.min(...withVals.map(x => x.v)); return withVals.filter(x => x.v === min).map(x => x.e); }
+      if (mode === 'high')  { const max = Math.max(...withVals.map(x => x.v)); return withVals.filter(x => x.v === max).map(x => x.e); }
+      if (mode === 'range') return inRangeEntities;
       return [];
     };
 
-    const makeStatPill = (label, val, mode) => {
+    const makeStatPill = (label, displayVal, mode, clickable = true) => {
       const el = document.createElement('div');
-      el.style.cssText = `flex:1;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:10px 8px;text-align:center;cursor:pointer;transition:background 0.15s ease,border-color 0.15s ease;`;
+      el.style.cssText = `flex:1;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:10px 8px;text-align:center;${clickable ? 'cursor:pointer;' : ''}transition:background 0.15s ease,border-color 0.15s ease;`;
       el.innerHTML = `
         <div style="font-size:11px;color:rgba(255,255,255,0.4);font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px;">${label}</div>
-        <div style="font-size:17px;font-weight:700;letter-spacing:-0.3px;color:${textCol};">${val !== null ? this._fmt(val)+unit : '—'}</div>`;
-      el.addEventListener('mouseenter', () => { if (activeSort !== mode) el.style.background = 'rgba(255,255,255,0.1)'; });
-      el.addEventListener('mouseleave', () => { if (activeSort !== mode) el.style.background = 'rgba(255,255,255,0.06)'; });
-      el.addEventListener('click', ev => {
-        ev.stopPropagation();
-        const newMode = activeSort === mode ? null : mode;
-        activeSort = newMode;
-        statsRow.querySelectorAll('.hedgehog-stat-pill').forEach(p => {
-          const isActive = p.dataset.mode === activeSort;
-          p.style.background  = isActive ? `${accent}33` : 'rgba(255,255,255,0.06)';
-          p.style.borderColor = isActive ? accent         : 'rgba(255,255,255,0.08)';
+        <div style="font-size:17px;font-weight:700;letter-spacing:-0.3px;color:${textCol};">${displayVal}</div>`;
+      if (clickable) {
+        el.addEventListener('mouseenter', () => { if (activeSort !== mode) el.style.background = 'rgba(255,255,255,0.1)'; });
+        el.addEventListener('mouseleave', () => { if (activeSort !== mode) el.style.background = 'rgba(255,255,255,0.06)'; });
+        el.addEventListener('click', ev => {
+          ev.stopPropagation();
+          const newMode = activeSort === mode ? null : mode;
+          activeSort = newMode;
+          statsRow.querySelectorAll('.hedgehog-stat-pill').forEach(p => {
+            const isActive = p.dataset.mode === activeSort;
+            p.style.background  = isActive ? `${accent}33` : 'rgba(255,255,255,0.06)';
+            p.style.borderColor = isActive ? accent         : 'rgba(255,255,255,0.08)';
+          });
+          highlightPills(getTargetEntities(activeSort));
         });
-        highlightPills(getTargetEntities(activeSort));
-      });
-      el.classList.add('hedgehog-stat-pill');
-      el.dataset.mode = mode;
+        el.classList.add('hedgehog-stat-pill');
+        el.dataset.mode = mode;
+      }
       return el;
     };
 
-    statsRow.appendChild(makeStatPill('Low',  minVal, 'low'));
-    statsRow.appendChild(makeStatPill('Avg',  avgVal, 'avg'));
-    statsRow.appendChild(makeStatPill('High', maxVal, 'high'));
+    const inRangeClickable = inRangeVal !== null;
+    const inRangeDisplay   = inRangeVal !== null ? `${inRangeVal} / ${entities.length}` : '—';
+    statsRow.appendChild(makeStatPill('Low',      minVal !== null ? this._fmt(minVal)+unit : '—', 'low'));
+    statsRow.appendChild(makeStatPill('In Range', inRangeDisplay, 'range', inRangeClickable));
+    statsRow.appendChild(makeStatPill('High',     maxVal !== null ? this._fmt(maxVal)+unit : '—', 'high'));
 
     popup.appendChild(style);
     popup.appendChild(headerRow);
