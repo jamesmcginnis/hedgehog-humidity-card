@@ -237,7 +237,7 @@ class HedgehogHumidityCard extends HTMLElement {
         background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
         transition: transform 0.15s ease, background 0.15s ease;
         min-width: 0; flex: 1; gap: 5px;
-        font-family: var(--primary-font-family, var(--paper-font-common-base_-_font-family, inherit));
+        font-family: var(--primary-font-family, inherit);
       }
       .hedgehog-sensor-pill:active { transform: scale(0.95); background: rgba(255,255,255,0.12); }
       .hedgehog-sensor-pill:hover  { background: rgba(255,255,255,0.1); }
@@ -684,12 +684,13 @@ class HedgehogHumidityCard extends HTMLElement {
     });
   }
 
-  // Returns the active HA font family for use in SVG text elements
+  // Returns the active HA font family for use in SVG text elements.
+  // Only returns a custom font if the active theme explicitly sets it —
+  // otherwise returns 'inherit' so the browser/HA default is used.
   _haFont() {
     const style = getComputedStyle(document.documentElement);
-    return style.getPropertyValue('--primary-font-family').trim()
-      || style.getPropertyValue('--paper-font-common-base_-_font-family').trim()
-      || 'inherit';
+    const custom = style.getPropertyValue('--primary-font-family').trim();
+    return custom || 'inherit';
   }
 
   _buildHumidGraph(values, timestamps, accent) {
@@ -910,7 +911,7 @@ class HedgehogHumidityCardEditor extends HTMLElement {
 
     this.shadowRoot.innerHTML = `
       <style>
-        :host { display: block; font-family: var(--primary-font-family, var(--paper-font-common-base_-_font-family, inherit)); }
+        :host { display: block; font-family: var(--primary-font-family, inherit); }
         .section { margin-bottom: 16px; }
         .section-title { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--secondary-text-color); margin-bottom: 8px; padding: 0 2px; display:flex;align-items:center;gap:6px; }
         .card-block { background: var(--card-background-color); border-radius: 12px; overflow: hidden; border: 1px solid var(--divider-color, rgba(0,0,0,0.1)); }
