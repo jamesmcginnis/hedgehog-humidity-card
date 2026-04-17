@@ -272,32 +272,71 @@ class HedgehogHumidityCard extends HTMLElement {
     const maxVal = vals.length ? Math.max(...vals) : null;
     const avgVal = vals.length ? vals.reduce((a,b) => a+b, 0) / vals.length : null;
 
-    // Find which entity corresponds to each stat for click-through
-    const minEntity = vals.length ? entities[entities.map(e => this._humidVal(e)).indexOf(minVal)] : null;
-    const maxEntity = vals.length ? entities[entities.map(e => this._humidVal(e)).indexOf(maxVal)] : null;
-    const avgEntity = vals.length ? entities.reduce((closest, e) => {
-      const v = this._humidVal(e); if (v === null) return closest;
-      return Math.abs(v - avgVal) < Math.abs((this._humidVal(closest) ?? Infinity) - avgVal) ? e : closest;
-    }) : null;
-
+    // Stats bar — clicking sorts the sensor grid below
     const statsRow = document.createElement('div');
     statsRow.style.cssText = 'display:flex;gap:8px;margin-bottom:18px;';
-    const makeStatPill = (label, val, entityId) => {
+
+    let activeSort = null; // 'low' | 'avg' | 'high' | null
+
+    const sortedEntities = (mode) => {
+      const withVals = entities.map(e => ({ e, v: this._humidVal(e) })).filter(x => x.v !== null);
+      if (mode === 'low')  withVals.sort((a, b) => a.v - b.v);
+      if (mode === 'high') withVals.sort((a, b) => b.v - a.v);
+      if (mode === 'avg')  withVals.sort((a, b) => Math.abs(a.v - avgVal) - Math.abs(b.v - avgVal));
+      return withVals.map(x => x.e);
+    };
+
+    const rebuildPills = (mode) => {
+      pillsGrid.innerHTML = '';
+      const ordered = mode ? sortedEntities(mode) : entities;
+      ordered.forEach((entityId, idx) => {
+        const val   = this._humidVal(entityId);
+        const name  = this._name(entityId);
+        const unit2 = this._unit(entityId);
+        const pill  = document.createElement('div');
+        pill.className = 'hedgehog-sensor-pill';
+        const humidColor = this._humidColor(val, allVals, accent);
+        const isTop = mode && idx === 0;
+        if (isTop) pill.style.cssText = `outline:2px solid ${accent};outline-offset:-2px;`;
+        pill.innerHTML = `
+          <div class="hedgehog-pill-icon">💧</div>
+          <div class="hedgehog-pill-humid" style="color:${humidColor}">${val !== null ? this._fmt(val)+unit2 : '—'}</div>
+          <div class="hedgehog-pill-name">${name}</div>`;
+        pill.addEventListener('click', ev => { ev.stopPropagation(); this._openGraphPopup(entityId); });
+        pillsGrid.appendChild(pill);
+      });
+    };
+
+    const makeStatPill = (label, val, mode) => {
       const el = document.createElement('div');
-      el.style.cssText = `flex:1;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:10px 8px;text-align:center;${entityId ? 'cursor:pointer;transition:background 0.15s ease;' : ''}`;
+      el.style.cssText = `flex:1;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:10px 8px;text-align:center;cursor:pointer;transition:background 0.15s ease,border-color 0.15s ease;`;
       el.innerHTML = `
         <div style="font-size:11px;color:rgba(255,255,255,0.4);font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px;">${label}</div>
         <div style="font-size:17px;font-weight:700;letter-spacing:-0.3px;color:${textCol};">${val !== null ? this._fmt(val)+unit : '—'}</div>`;
-      if (entityId) {
-        el.addEventListener('mouseenter', () => { el.style.background = 'rgba(255,255,255,0.12)'; });
-        el.addEventListener('mouseleave', () => { el.style.background = 'rgba(255,255,255,0.06)'; });
-        el.addEventListener('click', e => { e.stopPropagation(); this._openGraphPopup(entityId); });
-      }
+      el.addEventListener('mouseenter', () => { if (activeSort !== mode) el.style.background = 'rgba(255,255,255,0.1)'; });
+      el.addEventListener('mouseleave', () => { if (activeSort !== mode) el.style.background = 'rgba(255,255,255,0.06)'; });
+      el.addEventListener('click', ev => {
+        ev.stopPropagation();
+        const newMode = activeSort === mode ? null : mode;
+        activeSort = newMode;
+        statsRow.querySelectorAll('.hedgehog-stat-pill').forEach(p => {
+          const isActive = p.dataset.mode === activeSort;
+          p.style.background  = isActive ? `${accent}33` : 'rgba(255,255,255,0.06)';
+          p.style.borderColor = isActive ? accent         : 'rgba(255,255,255,0.08)';
+        });
+        pillsLabel.textContent = activeSort
+          ? `Sorted by ${activeSort}`
+          : `${entities.length} Sensor${entities.length !== 1 ? 's' : ''}`;
+        rebuildPills(activeSort);
+      });
+      el.classList.add('hedgehog-stat-pill');
+      el.dataset.mode = mode;
       return el;
     };
-    statsRow.appendChild(makeStatPill('Low',  minVal, minEntity));
-    statsRow.appendChild(makeStatPill('Avg',  avgVal, avgEntity));
-    statsRow.appendChild(makeStatPill('High', maxVal, maxEntity));
+
+    statsRow.appendChild(makeStatPill('Low',  minVal, 'low'));
+    statsRow.appendChild(makeStatPill('Avg',  avgVal, 'avg'));
+    statsRow.appendChild(makeStatPill('High', maxVal, 'high'));
 
     // Sensor pills label
     const pillsLabel = document.createElement('div');
@@ -309,20 +348,7 @@ class HedgehogHumidityCard extends HTMLElement {
     pillsGrid.style.cssText = 'display:grid;grid-template-columns:repeat(3,1fr);gap:10px;';
 
     const allVals = entities.map(e => this._humidVal(e)).filter(v => v !== null);
-    entities.forEach(entityId => {
-      const val   = this._humidVal(entityId);
-      const name  = this._name(entityId);
-      const unit2 = this._unit(entityId);
-      const pill  = document.createElement('div');
-      pill.className = 'hedgehog-sensor-pill';
-      const humidColor = this._humidColor(val, allVals, accent);
-      pill.innerHTML = `
-        <div class="hedgehog-pill-icon">💧</div>
-        <div class="hedgehog-pill-humid" style="color:${humidColor}">${val !== null ? this._fmt(val)+unit2 : '—'}</div>
-        <div class="hedgehog-pill-name">${name}</div>`;
-      pill.addEventListener('click', e => { e.stopPropagation(); this._openGraphPopup(entityId); });
-      pillsGrid.appendChild(pill);
-    });
+    rebuildPills(null);
 
     popup.appendChild(style);
     popup.appendChild(headerRow);
