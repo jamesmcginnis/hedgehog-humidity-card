@@ -272,14 +272,32 @@ class HedgehogHumidityCard extends HTMLElement {
     const maxVal = vals.length ? Math.max(...vals) : null;
     const avgVal = vals.length ? vals.reduce((a,b) => a+b, 0) / vals.length : null;
 
+    // Find which entity corresponds to each stat for click-through
+    const minEntity = vals.length ? entities[entities.map(e => this._humidVal(e)).indexOf(minVal)] : null;
+    const maxEntity = vals.length ? entities[entities.map(e => this._humidVal(e)).indexOf(maxVal)] : null;
+    const avgEntity = vals.length ? entities.reduce((closest, e) => {
+      const v = this._humidVal(e); if (v === null) return closest;
+      return Math.abs(v - avgVal) < Math.abs((this._humidVal(closest) ?? Infinity) - avgVal) ? e : closest;
+    }) : null;
+
     const statsRow = document.createElement('div');
     statsRow.style.cssText = 'display:flex;gap:8px;margin-bottom:18px;';
-    const statPill = (label, val) => `
-      <div style="flex:1;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:10px 8px;text-align:center;">
+    const makeStatPill = (label, val, entityId) => {
+      const el = document.createElement('div');
+      el.style.cssText = `flex:1;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:10px 8px;text-align:center;${entityId ? 'cursor:pointer;transition:background 0.15s ease;' : ''}`;
+      el.innerHTML = `
         <div style="font-size:11px;color:rgba(255,255,255,0.4);font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px;">${label}</div>
-        <div style="font-size:17px;font-weight:700;letter-spacing:-0.3px;color:${textCol};">${val !== null ? this._fmt(val)+unit : '—'}</div>
-      </div>`;
-    statsRow.innerHTML = statPill('Low', minVal) + statPill('Avg', avgVal) + statPill('High', maxVal);
+        <div style="font-size:17px;font-weight:700;letter-spacing:-0.3px;color:${textCol};">${val !== null ? this._fmt(val)+unit : '—'}</div>`;
+      if (entityId) {
+        el.addEventListener('mouseenter', () => { el.style.background = 'rgba(255,255,255,0.12)'; });
+        el.addEventListener('mouseleave', () => { el.style.background = 'rgba(255,255,255,0.06)'; });
+        el.addEventListener('click', e => { e.stopPropagation(); this._openGraphPopup(entityId); });
+      }
+      return el;
+    };
+    statsRow.appendChild(makeStatPill('Low',  minVal, minEntity));
+    statsRow.appendChild(makeStatPill('Avg',  avgVal, avgEntity));
+    statsRow.appendChild(makeStatPill('High', maxVal, maxEntity));
 
     // Sensor pills label
     const pillsLabel = document.createElement('div');
