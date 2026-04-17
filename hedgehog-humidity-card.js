@@ -276,6 +276,16 @@ class HedgehogHumidityCard extends HTMLElement {
     const statsRow = document.createElement('div');
     statsRow.style.cssText = 'display:flex;gap:8px;margin-bottom:18px;';
 
+    // Sensor pills label and grid declared here so rebuildPills/makeStatPill can reference them
+    const pillsLabel = document.createElement('div');
+    pillsLabel.style.cssText = 'font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:10px;';
+    pillsLabel.textContent = `${entities.length} Sensor${entities.length !== 1 ? 's' : ''}`;
+
+    const pillsGrid = document.createElement('div');
+    pillsGrid.style.cssText = 'display:grid;grid-template-columns:repeat(3,1fr);gap:10px;';
+
+    const allVals = entities.map(e => this._humidVal(e)).filter(v => v !== null);
+
     let activeSort = null; // 'low' | 'avg' | 'high' | null
 
     const sortedEntities = (mode) => {
@@ -338,16 +348,6 @@ class HedgehogHumidityCard extends HTMLElement {
     statsRow.appendChild(makeStatPill('Avg',  avgVal, 'avg'));
     statsRow.appendChild(makeStatPill('High', maxVal, 'high'));
 
-    // Sensor pills label
-    const pillsLabel = document.createElement('div');
-    pillsLabel.style.cssText = 'font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:10px;';
-    pillsLabel.textContent = `${entities.length} Sensor${entities.length !== 1 ? 's' : ''}`;
-
-    // Sensor pills grid
-    const pillsGrid = document.createElement('div');
-    pillsGrid.style.cssText = 'display:grid;grid-template-columns:repeat(3,1fr);gap:10px;';
-
-    const allVals = entities.map(e => this._humidVal(e)).filter(v => v !== null);
     rebuildPills(null);
 
     popup.appendChild(style);
