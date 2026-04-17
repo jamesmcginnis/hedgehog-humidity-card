@@ -249,7 +249,7 @@ class HedgehogHumidityCard extends HTMLElement {
 
     const popup = document.createElement('div');
     popup.className = 'hedgehog-popup';
-    popup.style.cssText = `background:${popupBg};backdrop-filter:blur(40px) saturate(180%);-webkit-backdrop-filter:blur(40px) saturate(180%);border:1px solid rgba(255,255,255,0.13);border-radius:28px;box-shadow:0 28px 72px rgba(0,0,0,0.65);padding:20px;width:100%;max-width:420px;max-height:85vh;overflow-y:auto;color:${textCol};`;
+    popup.style.cssText = `background:${popupBg};backdrop-filter:blur(40px) saturate(180%);-webkit-backdrop-filter:blur(40px) saturate(180%);border:1px solid rgba(255,255,255,0.13);border-radius:28px;box-shadow:0 28px 72px rgba(0,0,0,0.65);padding:20px;width:100%;max-width:420px;max-height:85vh;overflow-y:auto;color:${textCol};font-family:${this._haFont()};`;
     popup.addEventListener('touchmove', e => e.stopPropagation(), { passive: true });
 
     // Header
@@ -405,7 +405,7 @@ class HedgehogHumidityCard extends HTMLElement {
 
     const popup = document.createElement('div');
     popup.className = 'hedgehog-graph-popup';
-    popup.style.cssText = `background:${popupBg};backdrop-filter:blur(40px) saturate(180%);-webkit-backdrop-filter:blur(40px) saturate(180%);border:1px solid rgba(255,255,255,0.13);border-radius:26px;box-shadow:0 28px 72px rgba(0,0,0,0.65);padding:20px;width:100%;max-width:400px;max-height:85vh;overflow-y:auto;color:${textCol};`;
+    popup.style.cssText = `background:${popupBg};backdrop-filter:blur(40px) saturate(180%);-webkit-backdrop-filter:blur(40px) saturate(180%);border:1px solid rgba(255,255,255,0.13);border-radius:26px;box-shadow:0 28px 72px rgba(0,0,0,0.65);padding:20px;width:100%;max-width:400px;max-height:85vh;overflow-y:auto;color:${textCol};font-family:${this._haFont()};`;
     popup.addEventListener('touchmove', e => e.stopPropagation(), { passive: true });
 
     // Header
@@ -684,13 +684,14 @@ class HedgehogHumidityCard extends HTMLElement {
     });
   }
 
-  // Returns the active HA font family for use in SVG text elements.
-  // Only returns a custom font if the active theme explicitly sets it —
-  // otherwise returns 'inherit' so the browser/HA default is used.
+  // Returns the computed font-family from the card element itself.
+  // Since this element lives in the real HA DOM (not shadow DOM), its
+  // computed font reflects exactly what the active theme applies — no more,
+  // no less. This is used to stamp the correct font onto popups which are
+  // appended to document.body and would otherwise inherit whatever HA's
+  // body styles set.
   _haFont() {
-    const style = getComputedStyle(document.documentElement);
-    const custom = style.getPropertyValue('--primary-font-family').trim();
-    return custom || 'inherit';
+    return getComputedStyle(this).fontFamily || 'inherit';
   }
 
   _buildHumidGraph(values, timestamps, accent) {
