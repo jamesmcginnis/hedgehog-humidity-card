@@ -11,9 +11,10 @@ A compact, pill-shaped Lovelace card for Home Assistant that displays humidity r
 ## Features
 
 - **Compact pill design** — shows the live humidity range (min–max) across all configured sensors in a single, space-efficient card
-- **Sensor overview popup** — tap the card to open a bottom sheet showing Low / Avg / High stats and individual sensor pills in a 3-column grid
-- **History graph popup** — tap any sensor pill to see a detailed SVG line graph with selectable time ranges: 1h, 3h, 6h, 12h, 24h
-- **Threshold colouring** — optionally set low and high thresholds; graph lines change colour automatically when readings fall outside range
+- **Sensor overview popup** — tap the card to open a bottom sheet showing Low / In Range / High stats and individual sensor pills in a 3-column grid; tap a stat to highlight the matching sensor pills
+- **History graph popup** — tap any sensor pill to see a detailed SVG line graph with selectable time ranges: 1h, 3h, 6h, 12h, 24h, and an interactive crosshair showing value and timestamp at any point
+- **Comfort level indicator** — the graph popup shows a contextual comfort banner (e.g. 😊 Ideal humidity, 🏜️ Too dry, 💦 Too humid) based on your configured thresholds or standard indoor humidity bands
+- **Threshold colouring** — optionally set low and high thresholds; graph lines change colour automatically when readings fall outside range, with dashed threshold lines drawn on the graph
 - **Fully customisable colours** — seven colour fields with native colour pickers and hex inputs in the visual editor
 - **Custom display names** — override the Home Assistant friendly name per sensor directly in the editor
 - **Drag-to-reorder sensors** — reorder sensors in the editor with drag-and-drop (mouse and touch)
@@ -52,6 +53,8 @@ A compact, pill-shaped Lovelace card for Home Assistant that displays humidity r
 2. Search for **Hedgehog Humidity Card** and select it
 3. Use the visual editor to add sensors, set thresholds, and customise colours
 
+The editor automatically detects all humidity sensors in your Home Assistant instance (sensors with `device_class: humidity` and a `%` unit of measurement). Toggle any sensor to add it, drag the grip handle to reorder.
+
 ### Manual YAML configuration
 
 ```yaml
@@ -74,7 +77,7 @@ decimals: 1
 |---|---|---|---|
 | `entities` | list | `[]` | List of humidity sensor entity IDs to display |
 | `title` | string | `''` | Optional label shown on the left of the pill |
-| `decimals` | number | `1` | Number of decimal places for humidity values |
+| `decimals` | number | `1` | Number of decimal places for humidity values (0–3) |
 | `low_threshold` | number | `null` | Readings below this value are coloured with `low_color` |
 | `high_threshold` | number | `null` | Readings above this value are coloured with `high_color` |
 | `friendly_names` | map | `{}` | Override display names per entity, e.g. `sensor.x: "Kitchen"` |
@@ -129,11 +132,13 @@ icon_color: "#32ADE6"
 **Pill card** — displays the lowest and highest current readings across all configured sensors (e.g. `42.3–58.1%`). If only one sensor is configured, it shows a single value.
 
 **Overview popup** — tapping the pill opens an animated bottom sheet with:
-- A summary bar showing the current low, average, and high values across all sensors
-- A 3-column grid of individual sensor pills, each coloured relative to the spread of readings
+- A summary bar showing the current Low, In Range, and High values across all sensors; tap any stat pill to highlight the matching sensors in the grid
+- A 3-column grid of individual sensor pills, each coloured relative to the spread of readings (amber for the lowest, accent for the middle, green for the highest)
 - Tapping any sensor pill opens the graph popup for that sensor
 
-**Graph popup** — shows the current reading as a large figure, a segmented time-range control (1h / 3h / 6h / 12h / 24h), an SVG history graph fetched from the Home Assistant recorder, and a metadata section showing last updated time, battery level, and device class where available. Graph line colour respects the configured thresholds.
+**Graph popup** — shows the current reading as a large figure, a comfort level banner with emoji and advice, a segmented time-range control (1h / 3h / 6h / 12h / 24h), and an SVG history graph fetched from the Home Assistant recorder. Drag or click anywhere on the graph to show an interactive crosshair displaying the exact value and timestamp at that point. Graph line colour respects the configured thresholds. A metadata section shows last updated time, battery level, and device class where available.
+
+> **Note:** When both `low_threshold` and `high_threshold` are set, the In Range stat in the overview popup shows how many sensors are currently within range (e.g. `3 / 4`). Without thresholds set, it shows `—`.
 
 ---
 
@@ -141,7 +146,7 @@ icon_color: "#32ADE6"
 
 - Home Assistant 2023.x or newer
 - The [Recorder integration](https://www.home-assistant.io/integrations/recorder/) enabled (required for history graphs)
-- One or more `sensor` entities with a `unit_of_measurement` of `%` and a `device_class` of `humidity` (though any numeric sensor will work)
+- One or more `sensor` entities with a `unit_of_measurement` of `%` and a `device_class` of `humidity` (though any numeric sensor with a `%` unit will work)
 
 ---
 
